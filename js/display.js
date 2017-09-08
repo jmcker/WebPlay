@@ -169,14 +169,15 @@ function launchDisplay(id) {
     win.document.write("Content window: <br>");
     win.document.write("<script src=\"js/display.js\"></script>");
     win.document.write("<script> document.onkeydown = window.opener.keyHandler; </script>"); // Pass keystrokes from the display window to the main production window
-    win.document.write("<script> document.getElementsByTagName('iframe')[0].contentWindow.document.onkeydown = window.parent.opener.keyHandler; </script>"); // Pass keystrokes from the content window to the main production window
     win.document.body.appendChild(iframe);
+    win.document.write("<script> document.getElementsByTagName('iframe')[0].contentWindow.document.onkeydown = window.parent.opener.keyHandler; </script>"); // Pass keystrokes from the content window to the main production window
+    
+    // Apply styles
     iframe.contentWindow.document.head.innerHTML = "<link href=\"css/display.css\" rel=\"stylesheet\" type=\"text/css\">";
+    iframe.contentWindow.document.body.classList.add("active");
 
     // Store frame for later reference when adding content
     displays[id].iframe = iframe;
-    
-    console.log("Launched Display #" + id + ".");
     
     // Warning before close to prevent accidental closure
     // Handling function is stored so that it can be unbound when programatically closing a display
@@ -186,6 +187,8 @@ function launchDisplay(id) {
         //event.returnValue = msg;
         //return msg;
     });
+
+    console.log("Launched Display #" + id + ".");
 }
 
 function closeDisplay(id) {
@@ -209,7 +212,7 @@ function closeAllDisplays() {
 }
 
 // Pre load files and open fullscreen display before content needs to be shown
-function primeDisplay(id, filename, cueNumer) {
+function primeDisplay(id, filename, cueNumber) {
     if (!displays[id] || displays[id].window.closed) {
         onscreenAlert("Display #" + id + " is not active.");
         console.log("Display #" + id + " is not active.");
@@ -244,13 +247,11 @@ function initiateFullscreen(iframe) {
 function revealBodyContent(id) {
     if (!displays[id] || displays[id].window.closed) {
         onscreenAlert("Display #" + id + " is not active.");
-        console.log("Display #" + id + " is not active.");
         return;
     }
     
     displays[id].window.focus();
-    //initiateFullscreen(displays[id].iframe);
-    displays[id].iframe.contentWindow.document.body.style.opacity = 1;
+    displays[id].iframe.contentWindow.document.body.classList.add("active");
 }
 
 function hideBodyContent(id) {
@@ -259,7 +260,17 @@ function hideBodyContent(id) {
         return;
     }
     
-    displays[id].iframe.contentWindow.document.body.style.opacity = 0;
+    displays[id].iframe.contentWindow.document.body.classList.remove("active");
+}
+
+// AV mute function
+function toggleBodyContent(id) {
+    if (!displays[id] || displays[id].window.closed) {
+        onscreenAlert("Display #" + id + " is not active.");
+        return;
+    }
+
+    displays[id].iframe.contentWindow.document.body.classList.toggle("active");
 }
 
 // Sets the opacity of the element specified by elemId to 1
@@ -274,7 +285,7 @@ function revealContent(displayId, elemId) {
     // Fade out all other content
     var elems = displays[displayId].iframe.contentWindow.document.getElementsByClassName("elem");
     for (var i = 0; i < elems.length; i++) {
-        elems.classList.remove("active");
+        elems[i].classList.remove("active");
     }
     // Non-active elements, whether used or unused, remain in DOM
     // TODO: should they be removed? 
