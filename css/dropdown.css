@@ -1,0 +1,78 @@
+/*************************************************************
+    Based on Phil Hoyt's Pen "Simple Pure CSS Drop Down Menu."
+    https://codepen.io/philhoyt/pen/ujHzd
+    Included with modifications.
+*************************************************************/
+
+.menu-button-box {
+    position: absolute;
+    left: 5px;
+    bottom: 0;
+    min-width: 980px;
+    margin: 5px 5px 10px 5px;
+    z-index: 3;
+}
+
+.menu-button-box ul {
+	list-style: none;
+	position: relative;
+	float: left;
+	margin: 0;
+	padding: 0;
+}
+
+.menu-button-box ul a {
+	display: block;
+	color: black;
+	text-decoration: none;
+    font-size: .85em;
+    font-weight: 500;
+	padding: 0 10px;
+}
+
+.menu-button-box ul li {
+    position: relative;
+    float: left;
+    text-align: center;
+    min-width: 60px;
+	margin: 0;
+	padding: 3px;
+	border: 1px solid gray;
+	background-color: #E8E8E8;
+}
+
+.menu-button-box ul li.current-menu-item {
+	background: #DDDDDD;
+}
+
+.menu-button-box ul li:hover {
+	background: #F6F6F6;
+}
+
+.menu-button-box ul ul {
+	display: none;
+	position: absolute;
+	top: 100%;
+	left: 0;
+	background: #FFFFFF;
+	padding: 0;
+}
+
+.menu-button-box ul ul li {
+	float: none;
+	width: 200px;
+}
+
+.menu-button-box ul ul a {
+	line-height: 120%;
+	padding: 10px 15px;
+}
+
+.menu-button-box ul ul ul {
+	top: 0;
+	left: 100%;
+}
+
+.menu-button-box ul li:hover > ul {
+	display: block;
+}

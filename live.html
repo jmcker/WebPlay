@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>WB Show Control</title>
+        <link href="css/style.css" rel="stylesheet" type="text/css">
+        <link href="css/dropdown.css" rel="stylesheet" type="text/css">
+        <meta name="viewport" content="width=650, initial-scale=1">
+    </head>
+
+    <body>
+        <!-- Header -->
+        <div id="header" class="header">
+            <div id="title_container" class="title hidden">
+                <h1>
+                    <span id="display_title" class="visible" onclick="editTitle()">Unsaved Show</span>
+                    <span id="saved_indicator" class="hidden">*</span>
+                </h1>
+                <input type="text" id="edit_title" class="hidden"/>
+                <button id="save_title" class="hidden" onclick="closeTitle(true)">Save</button>
+                <button id="cancel_title" class="hidden" onclick="closeTitle(false)">Cancel</button>
+            </div>
+
+            <!-- Menu -->
+            <nav class="menu-button-box">
+                <ul>
+                    <li><a href="javascript:void(0);">Production</a>
+                        <ul>
+                            <li><a href="javascript:void(0);" onclick="window.open('index.html', 'blank')">Home</a></li>
+                            <li><a href="javascript:void(0);" onclick="saveProductionFile()" title="Ctrl-S">Save</a></li>
+                            <li><a href="javascript:void(0);" onclick="alert('TODO')">Save as...</a></li>
+                            <li><a href="javascript:void(0);" onclick="loadProductionFile(true)">Revert</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="javascript:void(0);">Cue</a>
+                        <ul>
+                            <li><a href="javascript:void(0);" onclick="javascript:void(0)">New</a>
+                                <ul>
+                                    <li><a href="javascript:void(0);" onclick="createCue('audio')" title="Ctrl-Shift-A">Audio</a></li>
+                                    <li><a href="javascript:void(0);" onclick="createCue('blank_audio')" title="Ctrl-Shift-B">Blank Audio</a></li>
+                                    <li><a href="javascript:void(0);" onclick="createCue('wait')" title="">Wait</a></li>
+                                    <li><a href="javascript:void(0);" onclick="createCue('control')" title="Ctrl-Shift-C">Control</a></li>
+                                    <li><a href="javascript:void(0);" onclick="createCue('memo')" title="Ctrl-Shift-M">Memo</a></li>
+                                    <li><a href="javascript:void(0);" onclick="createCue('image')">Image</a></li>
+                                    <li><a href="javascript:void(0);" onclick="createCue('video')">Video</a></li>
+                                    <li><a href="javascript:void(0);" onclick="createCue('html')">HTML</a></li>
+                                    <li><a href="javascript:void(0);" onclick="showNewCueMenu()" title="Ctrl-N">-- Cue Menu --</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="javascript:void(0);" onclick="editCue()" title="Ctrl-E">Edit</a></li>
+                            <li><a href="javascript:void(0);" onclick="deleteCue()" title="Ctrl-Del">Delete</a></li>
+                            <li><a href="javascript:void(0);" onclick="decreaseCueNum()" title="Shift-Up Arrow">Shift Up</a></li>
+                            <li><a href="javascript:void(0);" onclick="increaseCueNum()" title="Shift-Down Arrow">Shift Down</a></li>
+                        </ul>
+                    </li>
+                    <li><a href="javascript:void(0);">Display</a>
+                        <ul>
+                            <li><a href="javascript:void(0);" onclick="addDisplay()">Add Display</a></li>
+                            <li><a href="javascript:void(0);">Launch</a>
+                                <ul id="launchList">
+                                    <li><a href="javascript:void(0);" onclick="launchAllDisplays()">All Displays</a></li>
+                                    <!-- Individual displays added on creation -->
+                                </ul>
+                            </li>
+                            <li><a href="javascript:void(0);">Close</a>
+                                <ul id="closeList">
+                                    <li><a href="javascript:void(0);" onclick="closeAllDisplays()">All Displays</a></li>
+                                    <!-- Individual displays added on creation -->
+                                </ul>
+                            </li>
+                            <li><a href="javascript:void(0);" onclick="alert('TODO')">Settings</a></li>
+                            <li><a href="javascript:void(0);">Dev</a>
+                                <ul>
+                                    <li><a href="javascript:void(0);" onclick="primeDisplay(1, 'test.jpg')">Prime Display</a></li>
+                                    <li><a href="javascript:void(0);" onclick="revealContent(1, 'test.jpg')">Test Picture</a></li>
+                                    <li><a href="javascript:void(0);" onclick="hideContent(1, 'test.jpg')">Hide Content</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                    <li><a href="javascript:void(0);">File System</a>
+                        <ul>
+                            <li><a href="javascript:void(0);" onclick="createProd(false, '', true)">New Production</a></li>
+                            <li><a href="javascript:void(0);" onclick="uploadFile()">Upload File</a></li>
+                            <li><a href="javascript:void(0);" onclick="showUsage()">Display Usage</a></li>
+                            <li><a href="javascript:void(0);" onclick="clearFS()">Clear ENTIRE File System</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </nav>
+            
+            <!-- Alert bart -->
+            <div id="alert_container" class="alert-container">
+                <div id="alert_bar" class="alert-bar"></div>
+            </div>
+
+            <!-- Global audio controls -->
+            <div class="meter-box">
+                <table class="clipping-indicator-box">
+                    <tr>
+                        <td>
+                            <div id="clippedL" class="clipping-indicator" onclick="resetClipIndicator(0)">&nbsp;</div>
+                        </td>
+                        <td>
+                            <div style="width: 4.5px;"></div>
+                        </td>
+                        <td>
+                            <div id="clippedR" class="clipping-indicator" onclick="resetClipIndicator(1)">&nbsp;</div>
+                        </td>
+                    </tr>
+                </table>
+                <meter id="meterL" class="meter meterL" min="0" max="1" value="0"></meter>
+                <meter id="meterR" class="meter meterR" min="0" max="1" value="0"></meter>
+            </div>
+            <div class="global-control-box">
+                <table>
+                    <tr>
+                        <td>Master Volume:</td>
+                        <td>
+                            <input type="range" id="global_gain_control" min="-60" max="0" value="0">
+                        </td>
+                        <td id="global_gain_display" class="gain-pan-display"></td>
+                    </tr>
+                    <tr>
+                        <td>Master Pan:</td>
+                        <td>
+                            <input type="range" id="global_pan_control" min="-50" max="50" value="0">
+                        </td>
+                        <td id="global_pan_display" class="gain-pan-display"></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            Controls for:</td>
+                        <td>
+                            <select id="metered_output_selector">
+                                <option value="1">Output 1</option>
+                            </select>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        
+        <div class="action-button-box">
+            <button onclick="go()" id="go_button" class="action-button" title="Spacebar">GO</button><br>
+            <button onclick="stop()" id="stop_button" class="action-button">STOP</button><br>
+            <button onclick="fade()" id="fade_button" class="action-button">FADE</button><br>
+            <button onclick="fadeAll()" id="fade_all_button" class="action-button" title="Backspace">FADE ALL</button><br>
+            <button onclick="stopAll()" id="stop_all_button" class="action-button" title="Esc">STOP ALL</button>
+        </div>
+
+        <!-- Cue List -->
+        <table id="cue_list" class="cue-list">
+            <tr class="cue-row">
+                <th>EN</th>
+                <th>Q#</th>
+                <th>Hot Key</th>
+                <th>Notes</th>
+                <th>Description</th>
+                <th>Duration</th>
+                <th>Elapsed</th>
+                <th>Remaining</th>
+                <th>Volume</th>
+                <th>Pan</th>
+                <th>Pitch</th>
+                <th>Loops</th>
+                <th>Output</th>
+                <th>Action</th>
+                <th>Target</th>
+            </tr>
+
+            <!--Generated cue data-->
+        </table>
+
+        <!-- Popup Menus -->
+        <div class="popup-menu-container">
+            
+            <!-- New Cue Menu -->
+            <div id="new_cue_menu" class="hidden new-cue-menu">
+                <div style="position:relative; width: 100%;">
+                    <span class="modal-x" onclick="hideNewCueMenu()">X</span>
+                </div>
+                <h2>Create New Cue</h2>
+                <div class="inner">Cue Type:
+                    <select id="cue_type">
+                        <option value="audio">Audio Cue</option>>
+                        <option value="blank_audio">Blank Audio Cue</option>
+                        <option value="wait">Wait</option>
+                        <option value="control_cue">Control Cue</option>
+                        <option value="memo">Memo Cue</option>
+                    </select>
+                    <br>
+                    <br>
+                    <button id="create_cue" onclick="createCue()">Create</button>
+                    <button onclick="hideNewCueMenu()">Close</button>
+                </div>
+            </div>
+
+            <!-- Edit Cue Menu -->
+            <div id="edit_cue_menu" class="hidden edit-cue-menu">
+                <div style="position:relative; width: 100%;">
+                    <span class="modal-x" onclick="hideEditCueMenu()">X</span>
+                </div>
+                <h2 id="edit_menu_title">Edit Cue</h2>
+                <!-- Notes & Description -->
+                <table id="edit_param_table1" class="inner">
+                    <tr>
+                        <th class="edit-title">Notes:
+                        </th>
+                        <th class="edit-title">Desc:
+                        </th>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="text" id="edit_notes" class="long">
+                        </td>
+                        <td>
+                            <input type="text" id="edit_desc" class="long">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="edit-spacer"></td>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="edit-spacer top-bordered"></td>
+                    </tr>
+                </table>
+                <!-- Advance/Target -->
+                <table id="edit_param_table2" class="inner visible">
+                    <tr>
+                        <th class="edit-title">Cue Advance:</th>
+                    </tr>
+                    <tr>
+                        <td>Action:
+                            <select id="edit_action">
+                                <option value="SA">Start Advance</option>
+                                <option value="SP">Start Play</option>
+                                <option value="EA">End Advance</option>
+                                <option value="EP">End Play</option>
+                                <option value="FA">Fade Advance</option>
+                                <option value="FP">Fade Play</option>
+                            </select>
+                        </td>
+                        <td>Target:
+                            <select id="edit_target">
+                                <option value="0">Next Cue</option>
+                                <!-- Generated list of other cues -->
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="edit-spacer"></td>
+                    </tr>
+                </table>
+                <!-- File, Duration, & Fade -->
+                <table id="edit_param_table3" class="inner visible">
+                    <tr>
+                        <th class="edit-title" colspan=2>File [Length: <span id="edit_file_length">---</span>]: <span id="edit_filename"></span>
+                        </th>
+                    </tr>
+                    <tr>
+                        <td colspan=2>
+                            <input type="text" id="edit_filepath" class="long" disabled>
+                            <button onclick="deleteEditAudioFile()" id="edit_remove" class="edit-button">Remove</button>
+                            <input type="file" id="edit_file" name="file" class="edit-file" accept="audio/*">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="edit-spacer"></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="edit-slider-box">
+                                Volume: <span id="edit_vol">0dB</span>
+                                <br>
+                                <input type="range" id="vol_in" min="-60" max="0" value="0">
+                                <br>Pan: <span id="edit_pan">0</span>
+                                <br>
+                                <input type="range" id="pan_in" min="-50" max="50" value="0">
+                                <br>Pitch: <span id="edit_pitch">100%</span>
+                                <br>
+                                <input type="range" id="pitch_in" min="75" max="125" value="100">
+                                <br>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="edit-fade-loop-position-outer-box">
+                                <select id="edit_output" class="edit-output">
+                                    <option value="1">Output 1</option>
+                                    <!-- Generated list of other outputs -->
+                                </select>
+                                <fieldset id="edit_fade_pos_loop_fieldset">
+                                    <div class="edit-fade-loop-box">
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <input type="number" id="edit_fade_in" class="edit-number" min="0" value="0">
+                                                </td>
+                                                <td>Fade-In</td>
+                                                <td>
+                                                    <input type="number" id="edit_loops" class="edit-number" min="0" value="0">
+                                                </td>
+                                                <td>Loops</td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <input type="number" id="edit_fade_out" class="edit-number" min="0" value="0">
+                                                </td>
+                                                <td colspan="2">Fade-Out</td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                    <div class="edit-position-box">
+                                        Start Position:
+                                        <br>
+                                        <input type="number" id="edit_start_pos_min" class="edit-number" min="0" value="0">
+                                        <input type="number" id="edit_start_pos_sec" class="edit-number" min="0" value="0">
+                                        <input type="number" id="edit_start_pos_ms" class="edit-number" min="000" step="100" value="000">
+                                        <button onclick="clearEditStartPos()" class="edit-clear-button">Clear</button>
+                                        <br>Stop Position:
+                                        <br>
+                                        <input type="number" id="edit_stop_pos_min" class="edit-number" min="0" value="0">
+                                        <input type="number" id="edit_stop_pos_sec" class="edit-number" min="0" value="0">
+                                        <input type="number" id="edit_stop_pos_ms" class="edit-number" min="000" step="100" value="000">
+                                        <button onclick="clearEditStopPos()" class="edit-clear-button">Clear</button>
+                                    </div>
+                                </fieldset>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="edit-spacer"></td>
+                    </tr>
+                </table>
+                <!-- Wait Cue Parameters -->
+                <table id="edit_param_table4" class="inner visible">
+                    <tr>
+                        <td>Min:
+                        </td>
+                        <td>Sec:
+                        </td>
+                        <td>MS:
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <input type="number" id="wait_min_in" class="edit-number" min="0" value="0">
+                        </td>
+                        <td>
+                            <input type="number" id="wait_sec_in" class="edit-number" min="0" value="0">
+                        </td>
+                        <td>
+                            <input type="number" id="wait_ms_in" class="edit-number" min="0" value="0">
+                        </td>
+                        <td>
+                            <button class="edit-clear-button" onclick="clearEditWaitDur()">Clear</button>
+                        </td>
+                    </tr>
+                </table>
+                <!-- Control Cue Parameters -->
+                <table id="edit_param_table5" class="inner visible">
+                    <tr>
+                        <td colspan="2" class="edit-spacer top-bordered"></td>
+                    </tr>
+                    <tr>
+                        <th class="edit-title">Control Parameters:</th>
+                    </tr>
+                    <tr>
+                        <td>Action:
+                            <select id="edit_control_action">
+                                <option value="cue_start">Cue Start</option>
+                                <option value="cue_stop">Cue Stop</option>
+                                <option value="cue_fade">Cue Fade</option>
+                                <option value="cue_pause">Cue Pause</option>
+                                <option value="cue_resume">Cue Resume</option>
+                                <option value="vol_change">Volume Change</option>
+                                <option value="pan_change">Pan Change</option>
+                                <option value="pitch_change">Pitch Change</option>
+                                <option value="exit_loop">Exit Loop</option>
+                                <option value="set_position">Set Position</option>
+                                <option value="fade_all_prev">Fade All Previous</option>
+                                <option value="fade_all">Fade All</option>
+                                <option value="stop_all">Stop All</option>
+                            </select>
+                        </td>
+                        <td>Target:
+                            <select id="edit_control_target">
+                                <option value="0">Previous Cue</option>
+                                <!-- Generated list of other cues -->
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="edit-spacer"></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <span id="edit_control_param_label"></span>
+                            <span id="edit_control_param_value"></span>
+                            <input type="range" id="edit_control_volume" class="hidden" min="-60" max="0" value="0">
+                            <input type="range" id="edit_control_pan" class="hidden" min="-50" max="50" value="0">
+                            <input type="range" id="edit_control_pitch" class="hidden" min="75" max="125" value="100">
+                        </td>
+                        <td>
+                            <div id="edit_control_length_label" style="padding-bottom: 5px;"></div>
+                            <input type="number" id="edit_control_length" class="edit-number hidden" min="0" value="0">
+                        </td>
+                    </tr>
+                </table>
+                <table class="edit-button-box">
+                    <tr>
+                        <td>
+                            <button onclick="preview()" id="edit_preview" class="visible">Preview</button>
+                        </td>
+                        <td>
+                            <button onclick="saveEditedCue()" id="edit_save">Save</button>
+                        </td>
+                        <td>
+                            <button onclick="cancelEditedCue()" id="edit_cancel">Cancel</button>
+                        </td>
+                        <td>
+                            <button onclick="editCue()" id="edit_revert">Revert</button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            
+            <!-- Display Settings Menu -->
+            <div id="display_settings_menu" class="hidden display-settings-menu">
+                <div style="position:relative; width: 100%;">
+                    <span class="modal-x" onclick="hideDisplayMenu()">X</span>
+                </div>
+            </div>
+            
+        </div>
+        
+        <!-- Hidden -->
+        <div class="hidden">
+            <input type="file" id="file_upload" multiple>
+        </div>
+
+        <script src="js/filer.js" type="text/javascript" charset="utf-8"></script>
+        <script defer src="js/filesystem.js" type="text/javascript" charset="utf-8"></script>
+        <script src="js/keylisteners.js" type="text/javascript" charset="utf-8"></script>
+        <script defer src="js/code.js" type="text/javascript" charset="utf-8"></script>
+        <script src="js/meter.js" type="text/javascript" charset="utf-8"></script>
+        <script defer src="js/sound.js" type="text/javascript" charset="utf-8"></script>
+        <script src="js/display.js" type="text/javascript" charset="utf-8"></script>
+    </body>
+
+</html>

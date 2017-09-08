@@ -1,0 +1,133 @@
+    play(time) {
+        
+        this.syncParams();
+        this.init();
+		
+		if (!this.file) {
+            alert("Could not preview cue. No file loaded.");
+            return;
+        }
+		
+		previewing = this; // Global tracker
+		var self = this;
+		var preview = document.getElementById("edit_preview");
+		setButtonLock(true);
+        preview.innerHTML = "Stop Preview";
+        preview.onclick = function() { self.stop(0); };
+		
+		this.contextStart = time || this.context.currentTime; // Schedule the sound to be played at time if it exists. If not, play it now
+        this.contextStop = this.context.currentTime + this.cueDuration;
+        
+        // Decode the buffer, set the looping and fade times, and play the sound
+        this.obtainBytes(this.file, function(bytesAsArrayBuffer) {
+            self.decodeBytesAndPlay(bytesAsArrayBuffer);
+        });
+
+        console.log("Current time: " + this.context.currentTime);
+        console.log("Audio start position: " + this.startPos);
+        console.log("Audio stop position: " + this.stopPos);
+        console.log("Context stop time: " + this.contextStop);
+        console.log("Loops: " + this.loops);
+
+        var loopCount = 1;
+        var fading = false;
+        var contextStartLoc = this.contextStart;
+        var contextStopLoc = this.contextStop;
+        var contextFadeLoc = this.contextStart + this.cueDuration - this.fadeOutTime;
+        
+        this.intervalId = setInterval(function() {
+           
+            // Check for fadeout
+            if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFadeLoc) {
+                fading = true;
+                self.fadeOut(self.context.currentTime + self.fadeOutTime);
+            }
+
+            if (self.context.currentTime >= contextStopLoc) {
+                if (loopCount === self.loops) {
+                    // Stop playback
+                    self.stop(0);
+                    self = null;
+                } else {
+                    // Move to next iteration of the loop
+                    loopCount++;
+                    contextStartLoc += self.cueDuration;
+                    contextStopLoc += self.cueDuration;
+                    contextFadeLoc += self.cueDuration - self.fadeOutTime;
+                    fading = false;
+                    
+                    console.log("Completed loop #" + loopCount + " of preview Cue #" + self.cueNum + ".");
+                    self.fadeIn(self.context.currentTime + self.fadeInTime);
+                }
+            }
+        }, 20);
+    }
+
+    stop(time) {
+        time = time || this.context.currentTime;
+        
+        this.source.stop(time);
+        clearInterval(this.intervalId);
+        this.source = null;
+        console.log("Stopped preview.");
+        
+        var preview = document.getElementById("edit_preview");
+        preview.innerHTML = "Preview";
+        preview.setAttribute('onclick', 'preview()');
+        setButtonLock(false);
+        
+        previewing = null;
+        console.dir(previewing);
+    }
+    
+    fadeIn(time) {
+        time = time || this.context.currentTime + this.context.fadeInTime;
+        
+        console.log("Fade in started at: " + this.context.currentTime);
+        console.log("Fade in ends at: " + time);
+        
+        this.gainNode.gain.value = 0.001;
+        this.gainNode.gain.exponentialRampToValueAtTime(this.gain, time);
+        if (currentCue === this.cueNum) {
+            logVolSlide(this.context.currentTime, time, this.gainNode.gain.value, this.gain);
+        }
+    }
+    
+    fadeOut(time) {
+        time = time || this.context.currentTime + this.context.fadeOutTime;
+        
+        console.log("Fade out started at: " + this.context.currentTime);
+        console.log("Fade out ends at: " + time);
+        
+        this.gainNode.gain.exponentialRampToValueAtTime(0.001, time);
+        // Live update the edit menu volume slider
+        if (currentCue === this.cueNum) {
+            logVolSlide(this.context.currentTime, time, this.gainNode.gain.value, 0.001);
+        }
+    }
+
+    obtainBytes(selectedFile, callback) {
+        var reader = new FileReader();
+        reader.onload = function(ev) {
+            var bytesAsArrayBuffer = reader.result;
+            callback(bytesAsArrayBuffer);
+        };
+        reader.readAsArrayBuffer(selectedFile);
+    }
+
+    decodeBytesAndPlay(bytesAsArrayBuffer) {
+        var self = this;
+        this.context.decodeAudioData(bytesAsArrayBuffer, function(decodedSamplesAsAudioBuffer) {
+            self.source.buffer = decodedSamplesAsAudioBuffer;
+            
+            self.source.loop = true;
+            self.source.loopStart = self.startPos;
+            self.source.loopEnd = self.stopPos;
+            if (self.fadeInTime > 0)
+                self.fadeIn(self.contextStart + self.fadeInTime);
+            
+            self.source.start(self.contextStart, self.startPos);
+            self.source.stop(self.context.currentTime + self.cueDuration * self.loops);
+        });
+    }
+}

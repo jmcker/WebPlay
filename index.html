@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>WB Show Control</title>
+        <link href="css/style.css" rel="stylesheet" type="text/css">
+        <link href="css/showmenu.css" rel="stylesheet" type="text/css">
+        <link href="css/dropdown.css" rel="stylesheet" type="text/css">
+        <meta name="viewport" content="width=750, initial-scale=1">
+    </head>
+
+    <body>
+        <!-- Header -->
+        <div class="header">
+            <div class="title">
+                 <h1><span id="display_title" class="visible">Production Menu</span></h1>
+            </div>
+
+            <!-- Menu buttons -->
+            <nav class="menu-button-box">
+                <ul>
+                    <li><a href="javascript:void(0);" onclick="createProd()">New Production</a></li>
+                    <li><a href="javascript:void(0);" onclick="refreshFolder()">Refresh Folder</a></li>
+                    <li><a href="javascript:void(0);" onclick="uploadFile()">Upload Files</a></li>
+                    <li><a href="javascript:void(0);" onclick="uploadProd()">Upload Show</a></li>
+                </ul>
+            </nav>
+
+            <!-- Alert bart -->
+            <div id="alert_container" class="alert-container">
+                <div id="alert_bar" class="alert-bar"></div>
+            </div>
+            
+            <!-- Current Working Directory -->
+            <input type="text" id="cwd" class="cwd" disabled>
+            
+            <!-- File list -->
+            <div id="usage" class="usage">
+                Used: <span id="fs_used"></span>
+                Free: <span id="fs_free"></span>
+                Capacity: <span id="fs_cap"></span>
+            </div>
+        </div>
+
+        <div id="files" class="files">
+            <div class="up">
+                <a href="javascript:" onclick="cd(-1)">
+                    <img src="images/folder.png" class="icon" onclick="cd(-1)">
+                    [parent directory]
+                </a>
+            </div>
+            <table id="production_list" class="production-list"></table>
+            <div id="file_message" class="file-message"></div>
+        </div>
+        
+        <div id="file_preview_container" class="file-preview-container">
+            <div id="file_preview_inner" class="file-preview-inner hidden">
+                <div style="position:relative; width: 100%;">
+                    <span class="modal-x" onclick="togglePreview(false)">X</span>
+                </div>
+                <table id="file_preview_info" class="file-preview-info">
+                    <tr></tr>
+                    <tr></tr>
+                    <tr></tr>
+                    <tr></tr>
+                </table>
+                <div id="file_preview" class="file-preview"></div>
+            </div>
+        </div>
+        
+        <!-- Hidden -->
+        <div class="hidden">
+            <input type="file" id="file_upload" multiple>
+        </div>
+
+
+        <script src="js/filer.js" type="text/javascript" charset="utf-8"></script>
+        <script defer src="js/showmenu.js" type="text/javascript" charset="utf-8"></script>
+    </body>
+
+</html>
