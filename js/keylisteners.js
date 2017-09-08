@@ -162,7 +162,7 @@ window.addEventListener("beforeunload", function(event) {
 });
 
 window.onunload = function() {
-    closeAllDisplays();
+    closeAllDisplays(true);
     // TODO: save position information for restoring
 }
 
