@@ -195,7 +195,6 @@ function closeDisplay(id) {
     if (displays[id] && !displays[id].window.closed) {
         displays[id].window.close();
         console.log("Closed Display #" + id + ".");
-        return;
     }
 }
 
