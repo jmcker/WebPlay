@@ -184,8 +184,8 @@ function launchDisplay(id) {
     win.addEventListener("beforeunload", displays[id].bfunloadhandler = function(event) {
         var msg = "Are you sure you want to close this display? \nIf closed, visual content will not display.";
         
-        //event.returnValue = msg;
-        //return msg;
+        event.returnValue = msg;
+        return msg;
     });
 
     console.log("Launched Display #" + id + ".");
@@ -204,8 +204,12 @@ function launchAllDisplays() {
     }
 }
 
-function closeAllDisplays() {
+function closeAllDisplays(silent) {
+    if (!silet && !confirm("Close all displays?"))
+        return;
+
     for (var i = 1; i <= displays[0].length; i++) {
+        displays[i].window.removeEventListener('beforeunload', displays[i].bfunloadhandler);
         closeDisplay(i);
     }
 }
