@@ -1,17 +1,18 @@
 body {
     margin: 0;
     background-color: black;
-    opacity: 1;
-    transition: opacity 3s ease-in;
+    opacity: 0;
+    transition: opacity 1s ease-in;
 }
 
 .elem {
+    position: absolute;
     top: 0;
     width: 100%;
     max-height: 98vh;
     object-fit: contain; 
     opacity: 0;
-    transition: opacity 3s ease-in;
+    transition: opacity 1s ease-in-out;
 }
 
 .active {
