@@ -1,5 +1,4 @@
 var displays = {};
-displays[0] = []; // ID numbers for all current displays
 var nextDisplayId = 1;
 var cuesBeforeBlackout = 1; // TODO: editable in display settings
 var fadeInTime = 1;
@@ -93,20 +92,30 @@ class Video {
     }
 }
 
-function addDisplay(id, preventLaunch) {
+function addDisplay(id, launch) {
     if (id < 0)
         return;
     
-    id = id || prodData.displayCount + 1; // Add the display with the requested id or with the next available id. 
+    console.log(prodData.displayList);
+    // Use the next available id if none is provided
+    if (!id) { 
+        for (var i = 1; i <= prodData.displayList.length + 1; i++) {
+            if (!prodData.displayList[i - 1] || i !== prodData.displayList[i - 1]) {
+                id = i;
+                break;
+            }
+        }
+    }
+    launch = (typeof launch === "undefined") ? true : launch;
     
-    // Relaunch existing window if applicable
-    if (displays[id] && displays[id].window) {
-        displays[id].window.removeEventListener("beforeunload", displays[id].bfunloadhandler);
-        displays[id].window.close(); // Close existing window
-        
-        console.log("Relaunched Display #" + id + ".");
+    // Check if display menu entries already exist
+    console.log("")
+    if (document.getElementById("lli" + id)) {
+        launchDisplay(id);
+        onscreenInfo("Display #" + id + " already exists. Launching...");
+        return;
     } else {
-        addDisplayHTMLEntries(id, false);
+        addDisplayHTMLEntries(id);
     }
     
     // Create display object
@@ -114,7 +123,7 @@ function addDisplay(id, preventLaunch) {
     displays[id].id = id;
     
     // Launch display if applicable
-    if (!preventLaunch) {
+    if (launch) {
         launchDisplay(id);
     }
     
@@ -125,15 +134,62 @@ function addDisplay(id, preventLaunch) {
 function addDisplayHTMLEntries(id) {
         var launch = document.getElementById("launchList");
         var close = document.getElementById("closeList");
+        var remove = document.getElementById("removeList");
         var lli = document.createElement("li");
         var cli = document.createElement("li");
-        lli.innerHTML = "<a href=\"javascript:void(0);\" id=\"lli" + id + "\" onclick=\"launchDisplay(" + id + ")\">Display " + id + "</a>";
-        cli.innerHTML = "<a href=\"javascript:void(0);\" id=\"cli" + id + "\" onclick=\"closeDisplay(" + id + ")\">Display " + id + "</a>";
+        var rli = document.createElement("li");
+
+        lli.id = "lli" + id;
+        cli.id = "cli" + id;
+        rli.id = "rli" + id;
+        lli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"launchDisplay(" + id + ")\">Display " + id + "</a>";
+        cli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"closeDisplay(" + id + ")\">Display " + id + "</a>";
+        rli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"removeDisplay(" + id + ")\">Display " + id + "</a>";
+
         launch.appendChild(lli);
         close.appendChild(cli);
+        remove.appendChild(rli);
         
-        displays[0].push(id); // Add to display list
+        // Insert into display list (ordered)
+        var index = prodData.displayList.indexOf(id + 1);
+        if (index !== -1) {
+            prodData.displayList.splice(index, 0, id);
+        } else {
+            prodData.displayList.push(id);
+        }
+
         console.log("Added Display #" + id + ".");
+}
+
+function removeDisplay(id) {
+
+    closeDisplay(id);
+
+    var launch = document.getElementById("launchList");
+    var close = document.getElementById("closeList");
+    var lli = document.getElementById("lli" + id);
+    var cli = document.getElementById("cli" + id);
+    var rli = document.getElementById("rli" + id);
+
+    lli.parentNode.removeChild(lli);
+    cli.parentNode.removeChild(cli);
+    rli.parentNode.removeChild(rli);
+
+    console.log(prodData.displayList.indexOf(id));
+    prodData.displayList.splice(prodData.displayList.indexOf(id), 1); // Remove from display list
+    console.log(prodData.displayList);
+
+    console.log("Removed Display #" + id + ".");
+}
+
+function removeAllDisplays(silent) {
+    if (!silent && !confirm("Remove ALL displays from the current production?"))
+        return;
+
+    for (var i = 1; i <= prodData.displayList.length; i++) {
+        displays[i].window.removeEventListener('beforeunload', displays[i].bfunloadhandler);
+        closeDisplay(i);
+    }
 }
 
 function launchDisplay(id) {
@@ -191,24 +247,26 @@ function launchDisplay(id) {
     console.log("Launched Display #" + id + ".");
 }
 
-function closeDisplay(id) {
-    if (displays[id] && !displays[id].window.closed) {
-        displays[id].window.close();
-        console.log("Closed Display #" + id + ".");
-    }
-}
-
 function launchAllDisplays() {
-    for (var i = 1; i <= displays[0].length; i++) {
+    for (var i = 1; i <= prodData.displayList.length; i++) {
         launchDisplay(i);
     }
 }
 
+function closeDisplay(id) {
+    if (displays[id] && !displays[id].window.closed) {
+        displays[id].window.close();
+        console.log("Closed Display #" + id + ".");
+    } else {
+        //onscreenInfo("Display #" + id + " is already closed.");
+    }
+}
+
 function closeAllDisplays(silent) {
-    if (!silet && !confirm("Close all displays?"))
+    if (!silent && !confirm("Close all displays?"))
         return;
 
-    for (var i = 1; i <= displays[0].length; i++) {
+    for (var i = 1; i <= prodData.displayList.length; i++) {
         displays[i].window.removeEventListener('beforeunload', displays[i].bfunloadhandler);
         closeDisplay(i);
     }
