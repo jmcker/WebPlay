@@ -1,6 +1,0 @@
-if (hasFile(cueNum)) {
-                var filename = getFilename(cueNum);
-                if (!isDependentFile(filename))
-                    removeFile(filename, true); // If no other cue needs the file, silently remove it from storage
-                delete allCueFiles[cueNum]; // Remove from the array that holds each cue's track (1 to 1, so duplicates allowed)
-            }
