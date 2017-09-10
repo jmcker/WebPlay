@@ -116,6 +116,16 @@ function addDisplay(id, launch) {
         return;
     } else {
         addDisplayHTMLEntries(id);
+
+        // Insert into display list (ordered)
+        var index = prodData.displayList.indexOf(id + 1);
+        if (prodData.displayList.includes(id)) {
+            ;
+        } else if (index !== -1) {
+            prodData.displayList.splice(index, 0, id);
+        } else {
+            prodData.displayList.push(id);
+        }
     }
     
     // Create display object
@@ -132,33 +142,49 @@ function addDisplay(id, launch) {
 
 // Add menu entries to DOM
 function addDisplayHTMLEntries(id) {
-        var launch = document.getElementById("launchList");
-        var close = document.getElementById("closeList");
-        var remove = document.getElementById("removeList");
-        var lli = document.createElement("li");
-        var cli = document.createElement("li");
-        var rli = document.createElement("li");
+    var remove = document.getElementById("removeList");
+    var launch = document.getElementById("launchList");
+    var close = document.getElementById("closeList");
+    var rli = document.createElement("li");
+    var lli = document.createElement("li");
+    var cli = document.createElement("li");
 
-        lli.id = "lli" + id;
-        cli.id = "cli" + id;
-        rli.id = "rli" + id;
-        lli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"launchDisplay(" + id + ")\">Display " + id + "</a>";
-        cli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"closeDisplay(" + id + ")\">Display " + id + "</a>";
-        rli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"removeDisplay(" + id + ")\">Display " + id + "</a>";
+    rli.id = "rli" + id;
+    lli.id = "lli" + id;
+    cli.id = "cli" + id;
+    rli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"removeDisplay(" + id + ")\">Display " + id + "</a>";
+    lli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"launchDisplay(" + id + ")\">Display " + id + "</a>";
+    cli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"closeDisplay(" + id + ")\">Display " + id + "</a>";
 
-        launch.appendChild(lli);
-        close.appendChild(cli);
-        remove.appendChild(rli);
-        
-        // Insert into display list (ordered)
-        var index = prodData.displayList.indexOf(id + 1);
-        if (index !== -1) {
-            prodData.displayList.splice(index, 0, id);
-        } else {
-            prodData.displayList.push(id);
-        }
+    remove.appendChild(rli);
+    launch.appendChild(lli);
+    close.appendChild(cli);
 
-        console.log("Added Display #" + id + ".");
+    console.log("Added Display #" + id + ".");
+}
+
+function clearDisplayHTMLEntries() {
+    var remove = document.getElementById("removeList");
+    var launch = document.getElementById("launchList");
+    var close = document.getElementById("closeList");
+    var elems = remove.getElementsByTagName("li");
+
+    var len = elems.length;
+
+    // Remove each li but the first (first is all)
+    for (var i = 1; i < len; i++) {
+        elems[1].parentNode.removeChild(elems[1]);
+    }
+
+    elems = launch.getElementsByTagName("li");
+    for (var i = 1; i < len; i++) {
+        elems[1].parentNode.removeChild(elems[1]);
+    }
+
+    elems = close.getElementsByTagName("li");
+    for (var i = 1; i < len; i++) {
+        elems[1].parentNode.removeChild(elems[1]);
+    }
 }
 
 function removeDisplay(id) {
@@ -180,15 +206,17 @@ function removeDisplay(id) {
     console.log(prodData.displayList);
 
     console.log("Removed Display #" + id + ".");
+    setSavedIndicator(false);
 }
 
 function removeAllDisplays(silent) {
     if (!silent && !confirm("Remove ALL displays from the current production?"))
         return;
 
-    for (var i = 1; i <= prodData.displayList.length; i++) {
+    var len = prodData.displayList.length; // Queried length will shrink as displays are removed
+    for (var i = 1; i <= len; i++) {
         displays[i].window.removeEventListener('beforeunload', displays[i].bfunloadhandler);
-        closeDisplay(i);
+        removeDisplay(i);
     }
 }
 

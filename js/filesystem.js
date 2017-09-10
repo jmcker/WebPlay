@@ -199,7 +199,7 @@ function loadProductionFile(revert) {
             // TODO: Restore global audio controls and outputs
             
             // Restore displays
-            console.log(prodData.displayList);
+            clearDisplayHTMLEntries();
             for (var i = 0; i < prodData.displayList.length; i++) {
                 addDisplay(prodData.displayList[i], true);
             }
