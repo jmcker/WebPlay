@@ -68,7 +68,6 @@ function createOutputs() {
         meteredOuputSelector.add(option);
     }
 
-    console.dir(outputs);
     return outputs;
 }
 
@@ -182,6 +181,7 @@ class Playback {
         this.currentLoop = 1;
         this.output = getOutput(this.cueNum);
         this.action = getAction(this.cueNum);
+        this.targetId = getTargetId(this.cueNum);
     }
 
     // Scheduled playback and stopping using "time" parameter is no longer possible because of switch from buffered playback source
@@ -238,10 +238,9 @@ class Playback {
                     // Though initial gain when resuming will not be correct, the cue will still fade out and end within the expected duration
                     self.fadeOut(contextFadeLoc + self.fadeOutTime);
                     
-                    
                     // Handle FP and FA actions if they have not already been handled before the cue was paused
                     if (self.action.includes("F") && self.pausePoint < contextFadeLoc) {
-                        advance(self.target, self.action);
+                        advance(self.targetId, self.action);
                     }
                 }
     
@@ -255,7 +254,7 @@ class Playback {
                         // Handle EA and EP actions
                         // Handle FA and FP actions for cues with 0 second fadeouts
                         if (self.action.includes("E") || (self.fadeOutTime === 0 && self.action.includes("F")))
-                            advance(self.target, self.action);
+                            advance(self.targetId, self.action);
                         
                         self.stop();
                     } else {
@@ -633,7 +632,7 @@ class Wait {
     
     init() {
         this.duration = getCueDurInSecs(this.cueNum);
-        this.target = getTargetId(this.cueNum);
+        this.targetId = getTargetId(this.cueNum);
         this.action = getAction(this.cueNum);
     }
     
@@ -653,7 +652,7 @@ class Wait {
             if (context.currentTime >= contextStop) {
                 // Handle EA, EP, FA, and FP actions
                 if (self.action.includes("E") || self.action.includes("F")) {
-                    advance(self.target, self.action);
+                    advance(self.targetId, self.action);
                 }
                 self.stop();
             }
@@ -853,7 +852,7 @@ class Control {
             if (context.currentTime >= contextStop) {
                 // Handle EA, EP, FA, and FP actions
                 if (self.action.includes("E") || self.action.includes("F")) {
-                    advance(self.target, self.action);
+                    advance(self.targetId, self.action);
                 }
                 self.stop();
             }
