@@ -1,5 +1,10 @@
+// Declare and initialize production data
 var userConfig = {};
 var prodData = {};
+prodData.cueListContent = "";
+prodData.displayList = [];
+prodData.prodStyle = "";
+
 var currentCue = 0;
 var currentlyEditing = 0;
 var cueListLength = 0;
@@ -8,11 +13,6 @@ var estartmaximum;
 var estopminimum;
 var estopmaximum;
 var isSaved;
-
-// Initialize production data
-prodData.cueListContent = "";
-prodData.displayCount = 0;
-prodData.prodStyle = "";
 
 keyListeners(false, false, false, false);
 openFS();
