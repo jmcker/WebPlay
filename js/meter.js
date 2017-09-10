@@ -24,7 +24,7 @@ function createMeter(context) {
     analyserR.maxDecibels = DB_MAX;
     
     var activeOut = meteredOuputSelector.value;
-    console.log("Created meter for Output " + activeOut);
+    console.log("Created meter for Output " + activeOut + ".");
     outputs[activeOut + "_splitter"].connect(analyserL, 0);
     outputs[activeOut + "_splitter"].connect(analyserR, 1);
     analyserL.connect(meterProcL); // Serves as sample clock--no audio through
