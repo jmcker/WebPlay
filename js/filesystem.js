@@ -42,7 +42,7 @@ function openFS() {
                 persistent: true,
                 size: fs_cap
             }, function(fs) {
-                console.log("Opened FileSystem: " + fs.name);
+                console.log("Opened FileSystem: " + fs.name + ".");
                 
                 // Load or create user configuration file
                 loadUserConfig();
@@ -196,13 +196,12 @@ function loadProductionFile(revert) {
             }
             restoreAllCheckStatus(); // Restore status of check boxes
             
-            // Restore global audio controls and outputs
-            // TODO
+            // TODO: Restore global audio controls and outputs
             
             // Restore displays
-            // TODO: decide if displays should be launched in last used position
-            for (var i = 1; i <= parseInt(prodData.displayCount); i++) {
-                addDisplay(i, false);
+            console.log(prodData.displayList);
+            for (var i = 0; i < prodData.displayList.length; i++) {
+                addDisplay(prodData.displayList[i], true);
             }
             
             // Restore styling
@@ -225,8 +224,6 @@ function loadProductionFile(revert) {
 
 function saveProductionFile() {
     prodData.cueListContent = getCueListHTML();
-    prodData.displayCount = displays[0].length;
-    console.log(prodData.displayCount);
     filer.write(getProdName() + "_production.js", {data: "var prodData = " + JSON.stringify(prodData), type: "application/javascript"}, function(fileEntry, fileWriter) {
         onscreenInfo("Production saved.", 1);
         setSavedIndicator(true);
