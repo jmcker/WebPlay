@@ -204,14 +204,7 @@ function editCue(cueNum) {
     var cancel = document.getElementById("edit_cancel");
     var revert = document.getElementById("edit_revert");
 
-    eoutput.innerHTML = "";
-    for (i = 1; i <= context.destination.channelCount / 2; i++) {
-        var option = document.createElement("option");
-        option.value = i;
-        option.textContent = "Output " + i;
-        option.title = "Channels " + (i * 2 - 1) + "&" + (i * 2);
-        eoutput.add(option);
-    }
+    
 
     etarget.innerHTML = "<option value=\"0\">Next Cue</option>";
     for (i = 1; i <= cueListLength; i++) {
@@ -226,12 +219,16 @@ function editCue(cueNum) {
     clearEditStopPos();
     efile.value = "";
 
-    enotes.disabled = false; // Reset
+    enotes.disabled = false; // Reset from memo
+    eloops.disabled = false; // Reset from image
+    show("edit_param_table3_audio_controls"); // Reset from image
+
     if (ctype === "memo") {
         hide("edit_param_table2");
         hide("edit_param_table3");
         hide("edit_param_table4");
         hide("edit_param_table5");
+        hide("edit_param_table6");
         hide("edit_preview");
         enotes.disabled = true;
         etitle.innerHTML = "Edit Cue - Memo";
@@ -242,6 +239,7 @@ function editCue(cueNum) {
         hide("edit_param_table3");
         show("edit_param_table4");
         hide("edit_param_table5");
+        hide("edit_param_table6");
         hide("edit_preview");
         
         var emin = document.getElementById("wait_min_in");
@@ -254,7 +252,7 @@ function editCue(cueNum) {
         edesc.value = getDesc(cueNum);
         eaction.value = getAction(cueNum);
         etarget.value = getTargetId(cueNum);
-        setEditWaitDur(dur);
+        setEditTable4Dur(dur);
         
         emin.oninput = function() { validateNumberInput(this); };
         emin.onblur = function() { validateNumberInput(this, true); };
@@ -269,6 +267,7 @@ function editCue(cueNum) {
         show("edit_param_table3");
         hide("edit_param_table4");
         hide("edit_param_table5");
+        hide("edit_param_table6");
         show("edit_preview");
         
         var estartmin = document.getElementById("edit_start_pos_min");
@@ -277,6 +276,17 @@ function editCue(cueNum) {
         var estopmin = document.getElementById("edit_stop_pos_min");
         var estopsec = document.getElementById("edit_stop_pos_sec");
         var estopms = document.getElementById("edit_stop_pos_ms");
+
+        efile.setAttribute("accept", "audio/*");
+
+        eoutput.innerHTML = "";
+        for (i = 1; i <= context.destination.channelCount / 2; i++) {
+            var option = document.createElement("option");
+            option.value = i;
+            option.textContent = "Output " + i;
+            option.title = "Channels " + (i * 2 - 1) + "&" + (i * 2);
+            eoutput.add(option);
+        }
 
         etitle.innerHTML = "Edit Cue - " + getDesc(cueNum);
         enotes.value = getNotes(cueNum);
@@ -341,7 +351,7 @@ function editCue(cueNum) {
             efilepath.value = filename;
             setEditButtonLock(true);
             syncDataFromMediaElement(cueNum, efile.files[0]); // Updates filelength, stop position, and start position maximum
-            if (!edesc.value) {
+            if (!edesc.value || edesc.value === "Audio Cue") {
                 edesc.value = filename; // If no description is present, fill the description with the filename
             }
         };
@@ -351,6 +361,7 @@ function editCue(cueNum) {
         hide("edit_param_table3");
         hide("edit_param_table4");
         show("edit_param_table5");
+        hide("edit_param_table6");
         hide("edit_preview");
         
         var econtrol_action = document.getElementById("edit_control_action");
@@ -445,6 +456,106 @@ function editCue(cueNum) {
         // TODO: position stuff
         
         econtrol_action.oninput(); // Manually trigger oninput event to display proper controls
+
+
+    } else if (ctype === "image") {
+        show("edit_param_table2");
+        show("edit_param_table3");
+        hide("edit_param_table3_audio_controls");
+        hide("edit_param_table4");
+        hide("edit_param_table5");
+        show("edit_param_table6");
+        show("edit_preview");
+        eloops.disabled = true;
+
+        var estartmin = document.getElementById("edit_start_pos_min");
+        var estartsec = document.getElementById("edit_start_pos_sec");
+        var estartms = document.getElementById("edit_start_pos_ms");
+        var estopmin = document.getElementById("edit_stop_pos_min");
+        var estopsec = document.getElementById("edit_stop_pos_sec");
+        var estopms = document.getElementById("edit_stop_pos_ms");
+        var edurationUnitTime = document.getElementById("durationUnitTime");
+        var edurationUnitCue = document.getElementById("durationUnitCue");
+
+        efile.setAttribute("accept", "image/*");
+
+        eoutput.innerHTML = "";
+        for (i = 1; i <= prodData.displayList.length; i++) {
+            var option = document.createElement("option");
+            option.value = i;
+            option.textContent = "Display " + i;
+            eoutput.add(option);
+        }
+
+        etitle.innerHTML = "Edit Cue - " + getDesc(cueNum);
+        enotes.value = getNotes(cueNum);
+        edesc.value = getDesc(cueNum);
+        efadein.value = getFadeIn(cueNum);
+        efadeout.value = getFadeOut(cueNum);
+        eoutput.selectedIndex = getOutput(cueNum) - 1;
+        eaction.value = getAction(cueNum);
+        etarget.value = getTargetId(cueNum);
+        setEditStartPos(getStartPosAsArray(cueNum));
+        setEditStopPos(getStopPosAsArray(cueNum));
+        edurationUnitTime.checked = getIsTimeBased(cueNum);
+        edurationUnitCue.checked = !getIsTimeBased(cueNum);
+
+        if (hasFile(cueNum)) {
+            efilename.innerHTML = getFilename(cueNum);
+            efilepath.value = filer.pathToFilesystemURL(getFilename(cueNum));
+            setEditFileLength(null);
+            setEditStartPosMax(getStopPosAsArray(cueNum));
+            setEditStopPosMax(null);
+            setEditStopPosMin(getStartPosAsArray(cueNum));
+        } else {
+            efilename.innerHTML = "";
+            efilepath.value = "";
+            efile.value = "";
+            setEditFileLength(null);
+            // Max pos already cleared above
+        }
+
+        estartmin.oninput = function() { validateNumberInput(this); validateRange("start");};
+        estartmin.onblur = function() { validateNumberInput(this, true); validateRange("start"); };
+        estartsec.oninput = function() { validateNumberInput(this); validateRange("start"); };
+        estartsec.onblur = function() { validateNumberInput(this, true); validateRange("start"); };
+        estartms.oninput = function() { validateNumberInput(this); validateRange("start"); };
+        estartms.onblur = function() { validateNumberInput(this, true); validateRange("start"); };
+        estopmin.oninput = function() { validateNumberInput(this); };
+        estopmin.onblur = function() { validateNumberInput(this, true); };
+        estopsec.oninput = function() { validateNumberInput(this); };
+        estopsec.onblur = function() { validateNumberInput(this, true); };
+        estopms.oninput = function() { validateNumberInput(this); };
+        estopms.onblur = function() { validateNumberInput(this, true); };
+        efile.onchange = function() {
+            var filename = efile.files[0].name;
+            var type = efile.files[0].type;
+            var size = efile.files[0].size;
+            console.log("file name: " + filename);
+            console.log("file MIME: " + type);
+            if (type.indexOf("image") === -1) {
+                onscreenAlert(filename + " is not an image file. Please try again.");
+                efile.value = "";
+                return;
+            }
+            efilename.innerHTML = filename;
+            efilepath.value = filename;
+            if (!edesc.value || edesc.value === "Image Cue") {
+                edesc.value = filename; // If no description is present, fill the description with the filename
+            }
+        };
+
+
+        
+
+        /*var eisTimeBased = document.getElementById("durationUnit");
+
+        if (!eisTimeBased) {
+            hide("edit_param_table3");
+            show("edit_duration_by_cue");
+        }*/
+
+
     }
 
     showEditCueMenu();
@@ -547,6 +658,20 @@ function getEditStartPos() {
 }
 
 function setEditStartPosMax(arr) {
+    // Remove the validateRange() call from the event handlers
+    if (arr == null) {
+        var emin = document.getElementById("edit_start_pos_min");
+        var esec = document.getElementById("edit_start_pos_sec");
+        var ems = document.getElementById("edit_start_pos_ms");
+        emin.oninput = function() { validateNumberInput(this); };
+        emin.onblur = function() { validateNumberInput(this, true); };
+        esec.oninput = function() { validateNumberInput(this); };
+        esec.onblur = function() { validateNumberInput(this, true); };
+        ems.oninput = function() { validateNumberInput(this); };
+        ems.onblur = function() { validateNumberInput(this, true); };
+        return;
+    }
+
     estartmaximum = arrayToSec(arr);
 }
 
@@ -567,6 +692,21 @@ function getEditStopPos() {
 }
 
 function setEditStopPosMax(arr) {
+
+    // Remove the validateRange() call from the event handlers
+    if (arr == null) {
+        var emin = document.getElementById("edit_stop_pos_min");
+        var esec = document.getElementById("edit_stop_pos_sec");
+        var ems = document.getElementById("edit_stop_pos_ms");
+        emin.oninput = function() { validateNumberInput(this); };
+        emin.onblur = function() { validateNumberInput(this, true); };
+        esec.oninput = function() { validateNumberInput(this); };
+        esec.onblur = function() { validateNumberInput(this, true); };
+        ems.oninput = function() { validateNumberInput(this); };
+        ems.onblur = function() { validateNumberInput(this, true); };
+        return;
+    }
+
     estopmaximum = arrayToSec(arr);
 }
 
@@ -597,14 +737,14 @@ function clearEditStopPos() {
     }
 }
 
-function getEditWaitDur() {
+function getEditTable4Dur() {
     var emin = document.getElementById("wait_min_in");
     var esec = document.getElementById("wait_sec_in");
     var ems = document.getElementById("wait_ms_in");
     return arrayToSec([emin.value, esec.value, ems.value]);
 }
 
-function setEditWaitDur(arr) {
+function setEditTable4Dur(arr) {
     var emin = document.getElementById("wait_min_in");
     var esec = document.getElementById("wait_sec_in");
     var ems = document.getElementById("wait_ms_in");
@@ -613,8 +753,8 @@ function setEditWaitDur(arr) {
     ems.value = arr[2];
 }
 
-function clearEditWaitDur() {
-    setEditWaitDur([0, 0, 0]);
+function clearEditTable4Dur() {
+    setEditTable4Dur([0, 0, 0]);
 }
 
 function validateNumberInput(self, fillBlank) {
@@ -643,8 +783,6 @@ function validateRange(type) {
         }
     }
     
-    // Need to remove max and min on number inputs to allow for ex: 45s when track is 1m 5s 0ms.
-    // Cutting off the number value without respect to the others doesn't work
     setEditStartPosMax(secToArray(getEditStopPos()));
     setEditStopPosMin(secToArray(getEditStartPos()));
 }
@@ -689,7 +827,7 @@ function saveEditedCue(cueNum) {
         
         
     } else if (ctype === "wait") {
-        setCueDur(cueNum, getEditWaitDur());
+        setCueDur(cueNum, getEditTable4Dur());
         setNotes(cueNum, enotes.value);
         setDesc(cueNum, edesc.value);
         
@@ -706,7 +844,7 @@ function saveEditedCue(cueNum) {
             setFilename(cueNum, efilename.innerHTML);
             writeFile(efile.files[0].name, efile.files[0]);
             setStartPos(cueNum, arrayToSec([estartmin.value, estartsec.value, estartms.value]));
-            setStopPos(cueNum, arrayToSec([estopmin.value, estopsec.value, estopms.value])); // In case user changed it from file length
+            setStopPos(cueNum, arrayToSec([estopmin.value, estopsec.value, estopms.value]));
             console.log("Updated duration: " + secToTime(getStopPosInSecs(cueNum) - getStartPosInSecs(cueNum)));
             setCueDur(cueNum, getStopPosInSecs(cueNum) - getStartPosInSecs(cueNum)); // Duration of cue based on start and stop position
             setFileDur(cueNum, getEditFileLength()); // Full duration of file
@@ -715,13 +853,13 @@ function saveEditedCue(cueNum) {
             setType(cueNum, "blank_audio");
             setCueDur(cueNum, null);
             setFileDur(cueNum, null);
-            setStartPos(cueNum, null);
-            setStopPos(cueNum, null);
+            setStartPos(cueNum, 0);
+            setStopPos(cueNum, 0);
             setFilename(cueNum, "");
         } else {
             // User did not change file
             setStartPos(cueNum, arrayToSec([estartmin.value, estartsec.value, estartms.value]));
-            setStopPos(cueNum, arrayToSec([estopmin.value, estopsec.value, estopms.value])); // In case user changed it from file length
+            setStopPos(cueNum, arrayToSec([estopmin.value, estopsec.value, estopms.value]));
             console.log("Updated duration: " + secToTime(getStopPosInSecs(cueNum) - getStartPosInSecs(cueNum)));
             setCueDur(cueNum, getStopPosInSecs(cueNum) - getStartPosInSecs(cueNum)); // Duration of cue based on start and stop position
             setFileDur(cueNum, getEditFileLength()); // Full duration of file
@@ -744,7 +882,7 @@ function saveEditedCue(cueNum) {
         var econtrol_pos_m = document.getElementById("edit_pos_m");
         var econtrol_pos_s = document.getElementById("edit_pos_s");
         var econtrol_pos_ms = document.getElementById("edit_pos_ms");
-        var hasLength = [2, 5, 6, 7, 10, 11]; // Indices of options in control action menu that require saving a cue duration
+        var hasLength = [2, 5, 6, 7, 10, 11]; // Options in control action menu that require saving a cue duration
         
         setNotes(cueNum, enotes.value);
         setDesc(cueNum, edesc.value);
@@ -768,6 +906,31 @@ function saveEditedCue(cueNum) {
         setControlActionParams(cueNum, params);
         
         // TODO: position stuff
+
+
+    } else if (ctype === "image") {
+        var edurationUnitTime = document.getElementById("durationUnitTime");
+
+        setNotes(cueNum, enotes.value);
+        setDesc(cueNum, edesc.value);
+        if (efile.files[0]) {
+            // User selected new image file
+            setFilename(cueNum, efilename.innerHTML);
+            writeFile(efile.files[0].name, efile.files[0]);
+        } else if (efilename.innerHTML === "") {
+            // User removed file
+            setFilename(cueNum, "");
+        }
+        setStartPos(cueNum, arrayToSec([estartmin.value, estartsec.value, estartms.value]));
+        setStopPos(cueNum, arrayToSec([estopmin.value, estopsec.value, estopms.value]));
+        setCueDur(cueNum, getStopPosInSecs(cueNum) - getStartPosInSecs(cueNum));
+        setFadeIn(cueNum, efadein.value);
+        setFadeOut(cueNum, efadeout.value);
+        setIsTimeBased(cueNum, edurationUnitTime.checked);
+        setDisplay(cueNum, eoutput.selectedIndex + 1);
+        setAction(cueNum, eaction.value);
+        setTarget(cueNum, etarget.value);
+
     }
     
     // Release event handlers
@@ -1033,6 +1196,18 @@ function getFileDurAsArray(cueNum) {
     return timeToArray(getFileDur(cueNum));
 }
 
+function getIsTimeBased(cueNum) {
+    return parseInt(document.getElementById(cueNum + "00060006").innerHTML);
+}
+
+function setIsTimeBased(cueNum, bool) {
+    if (bool) {
+        document.getElementById(cueNum + "00060006").innerHTML = "1";
+    } else {
+        document.getElementById(cueNum + "00060006").innerHTML = "0";
+    }
+}
+
 function getStartPos(cueNum) {
     return secToTime(getStartPosInSecs(cueNum));
 }
@@ -1215,7 +1390,7 @@ function isDependentFile(filename) {
     return false;
 }
 
-function deleteEditAudioFile(cueNum) {
+function deleteEditMediaFile(cueNum) {
     cueNum = cueNum || currentCue;
     // Actual deletion must take place in saveEditedCue in case user selects cancel
     var efile = document.getElementById("edit_file");
@@ -1227,8 +1402,8 @@ function deleteEditAudioFile(cueNum) {
     setEditFileLength(null);
     clearEditStartPos();
     clearEditStopPos();
-    setEditStartPosMax([0, 0, 0]);
-    setEditStopPosMax([0, 0, 0]);
+    setEditStartPosMax(null);
+    setEditStopPosMax(null);
     setEditStopPosMin([0, 0, 0]);
 }
 
@@ -1242,7 +1417,7 @@ function initializeCue(cueNum) {
     } else if (ctype === "wait") {
         setEnabled(cueNum, true);
         setNotes(cueNum, "");
-        setDesc(cueNum, "Wait");
+        setDesc(cueNum, "Wait Cue");
         setCueDur(cueNum, 0);
         setFileDur(cueNum, 0);
         setAction(cueNum, "EP");
@@ -1251,7 +1426,7 @@ function initializeCue(cueNum) {
     } else if (ctype === "audio" || ctype === "blank_audio") {
         setEnabled(cueNum, true);
         setNotes(cueNum, "");
-        setDesc(cueNum, "");
+        setDesc(cueNum, "Audio Cue");
         setFilename(cueNum, "");
         setCueDur(cueNum, null);
         setFileDur(cueNum, null);
@@ -1284,6 +1459,11 @@ function initializeCue(cueNum) {
         setNotes(cueNum, "");
         setDesc(cueNum, "Image Cue");
         setCueDur(cueNum, null);
+        setStartPos(cueNum, 0);
+        setStopPos(cueNum, 0);
+        setFadeIn(cueNum, 0);
+        setFadeOut(cueNum, 0);
+        setIsTimeBased(cueNum, true);
         setDisplay(cueNum, 1);
         setAction(cueNum, "SA");
         setTarget(cueNum, 0);
@@ -1830,10 +2010,20 @@ function createCue(cueType) {
                     displaydur.className = "visible";
                     cell.appendChild(displaydur);
                     
-                    var fullfileduration = document.createElement("div");
-                    fullfileduration.id = cellId + "6";
-                    fullfileduration.className = "hidden";
-                    cell.appendChild(fullfileduration);
+                    var fadeIn = document.createElement("div");
+                    fadeIn.id = cellId + "4";
+                    fadeIn.className = "hidden";
+                    cell.appendChild(fadeIn);
+                    
+                    var fadeOut = document.createElement("div");
+                    fadeOut.id = cellId + "5";
+                    fadeOut.className = "hidden";
+                    cell.appendChild(fadeOut);
+                    
+                    var isTimeBased = document.createElement("div");
+                    isTimeBased.id = cellId + "6";
+                    isTimeBased.className = "hidden";
+                    cell.appendChild(isTimeBased);
                     break;
                 case 7:
                     cell.className = "cue control elapsed";
@@ -1991,6 +2181,16 @@ function createCue(cueType) {
                     displaydur.id = cellId + "1";
                     displaydur.className = "visible";
                     cell.appendChild(displaydur);
+
+                    var startPos = document.createElement("div");
+                    startPos.id = cellId + "2";
+                    startPos.className = "hidden";
+                    cell.appendChild(startPos);
+                    
+                    var stopPos = document.createElement("div");
+                    stopPos.id = cellId + "3";
+                    stopPos.className = "hidden";
+                    cell.appendChild(stopPos);
                     
                     var fadeIn = document.createElement("div");
                     fadeIn.id = cellId + "4";
@@ -2001,6 +2201,11 @@ function createCue(cueType) {
                     fadeOut.id = cellId + "5";
                     fadeOut.className = "hidden";
                     cell.appendChild(fadeOut);
+
+                    var isTimeBased = document.createElement("div");
+                    isTimeBased.id = cellId + "6";
+                    isTimeBased.className = "hidden";
+                    cell.appendChild(isTimeBased);
                     
                     break;
                 case 7:
@@ -2437,10 +2642,16 @@ function updateCueNumber(currNum, shift) {
                 case 6:
                     var displaydur = document.getElementById(oldCellId + "1");
                     displaydur.id = newCellId + "1";
+                    var startPos = document.getElementById(oldCellId + "2");
+                    startPos.id = newCellId + "2";
+                    var stopPos = document.getElementById(oldCellId + "3");
+                    stopPos.id = newCellId + "3";
                     var fadeIn = document.getElementById(oldCellId + "4");
                     fadeIn.id = newCellId + "4";
                     var fadeOut = document.getElementById(oldCellId + "5");
                     fadeOut.id = newCellId + "5";
+                    var isTimeBased = document.getElementById(oldCellId + "6");
+                    isTimeBased.id = newCellId + "6";
                     break;
                 case 7:
                     var display = document.getElementById(oldCellId + "1");
