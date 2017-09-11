@@ -131,7 +131,7 @@ function percentageToCents(perc) {
 
 
 
-class Playback {
+class AudioCue {
 
     constructor(context, cueNum) {
         this.context = context;
@@ -184,7 +184,6 @@ class Playback {
         this.targetId = getTargetId(this.cueNum);
     }
 
-    // Scheduled playback and stopping using "time" parameter is no longer possible because of switch from buffered playback source
     play() {
         
         if (!hasFile(this.cueNum)) {
@@ -209,84 +208,10 @@ class Playback {
             self.player.play();
             self.player.oncanplaythrough = function() {}; // Overwrite the oncanplaythrough handler to prevent firing multiple times when seeking
             
-            var fading = false;
-            var contextStartLoc = self.context.currentTime;
-            var contextStopLoc = contextStartLoc + self.cueDuration - self.pausePoint; // Compensate for shorter cue length when resuming from pause
-            var contextFadeLoc = contextStartLoc + self.cueDuration - self.fadeOutTime - self.pausePoint;
-            
-            // Fade in if the cue has a fade and the fade has not passed already
-            if (self.fadeInTime > 0 && self.pausePoint < self.fadeInTime)
-                self.fadeIn(contextStartLoc + self.fadeInTime - self.pausePoint); // Scheduled to end at cue start + fade length
-                
-            console.log("Current time: " + self.context.currentTime +
-                      "\nCurrent loop: #" + self.currentLoop + " of " + self.loops +
-                      "\nAudio start position: " + (self.pausePoint ? self.startPos + self.pausePoint + " (from pause)" : self.startPos) +
-                      "\nAudio stop position: " + self.stopPos +
-                      "\nContext stop time: " + contextStopLoc);
-            
-            self.intervalId = setInterval(function() {
-                
-                // Update the playback progress bar (fake a context time in the past when coming from pause so that the bars start in the correct position)
-                self.updateProgressDisplay(contextStartLoc - self.pausePoint);
-               
-                // If the cue has a fade, is not fading, and should be fading, start the fade
-                if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFadeLoc) {
-                    
-                    fading = true;
-                    
-                    // contextFadeLoc may be negative if the paused point lies somewhere within the bounds of (fadeout start) and (cue end)
-                    // Though initial gain when resuming will not be correct, the cue will still fade out and end within the expected duration
-                    self.fadeOut(contextFadeLoc + self.fadeOutTime);
-                    
-                    // Handle FP and FA actions if they have not already been handled before the cue was paused
-                    if (self.action.includes("F") && self.pausePoint < contextFadeLoc) {
-                        advance(self.targetId, self.action);
-                    }
-                }
-    
-                // If the iteration should be over, check to see if the cue should go into another iteration or stop
-                if (self.context.currentTime >= contextStopLoc) {
-                    if (self.currentLoop === self.loops) {
-                        
-                        // Stop playback and erase the active cue
-                        console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
-                        
-                        // Handle EA and EP actions
-                        // Handle FA and FP actions for cues with 0 second fadeouts
-                        if (self.action.includes("E") || (self.fadeOutTime === 0 && self.action.includes("F")))
-                            advance(self.targetId, self.action);
-                        
-                        self.stop();
-                    } else {
-                        
-                        // Move to next iteration of the loop
-                        console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
-                        
-                        self.currentLoop++;
-                        resetProgressBar(self.cueNum);
-                        
-                        // Store the new iteration start and stop times (context clock)
-                        contextStartLoc += self.cueDuration - self.pausePoint;
-                        contextStopLoc += self.cueDuration;
-                        contextFadeLoc += self.cueDuration;
-                        
-                        // Reset pause to prevent compensating for it more than once
-                        self.pausePoint = 0;
-                        
-                        // Seek to the start position
-                        self.player.currentTime = self.startPos;
-                        
-                        // Fade in the next iteration
-                        fading = false; // Reset FADEOUT flag
-                        if (self.fadeInTime > 0)
-                            self.fadeIn(self.context.currentTime + self.fadeInTime);
-                    }
-                }
-            }, 20);
+            self.startTimer();
         };
     }
     
-    // Scheduled playback and stopping using "time" parameter is no longer possible because of switch from buffered playback source
     stop() {
         
         this.player.pause(); // Stop the HTML player
@@ -411,6 +336,84 @@ class Playback {
             setTimeout(function() { self.stop(); }, length * 1000 + 10); // Padded 10 ms
         }
     }
+
+    startTimer() {
+        var self = this;
+        var fading = false;
+        var contextStartLoc = self.context.currentTime;
+        var contextStopLoc = contextStartLoc + self.cueDuration - self.pausePoint; // Compensate for shorter cue length when resuming from pause
+        var contextFadeLoc = contextStartLoc + self.cueDuration - self.fadeOutTime - self.pausePoint;
+            
+        // Fade in if the cue has a fade and the fade has not passed already
+        if (self.fadeInTime > 0 && self.pausePoint < self.fadeInTime)
+            self.fadeIn(contextStartLoc + self.fadeInTime - self.pausePoint); // Scheduled to end at cue start + fade length
+                
+        console.log("Current time: " + self.context.currentTime +
+                    "\nCurrent loop: #" + self.currentLoop + " of " + self.loops +
+                    "\nAudio start position: " + (self.pausePoint ? self.startPos + self.pausePoint + " (from pause)" : self.startPos) +
+                    "\nAudio stop position: " + self.stopPos +
+                    "\nContext stop time: " + contextStopLoc);
+            
+        self.intervalId = setInterval(function() {
+                
+            // Update the playback progress bar (fake a context time in the past when coming from pause so that the bars start in the correct position)
+            self.updateProgressDisplay(contextStartLoc - self.pausePoint);
+               
+            // If the cue has a fade, is not fading, and should be fading, start the fade
+            if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFadeLoc) {
+                    
+                fading = true;
+                    
+                // contextFadeLoc may be negative if the paused point lies somewhere within the bounds of (fadeout start) and (cue end)
+                // Though initial gain when resuming will not be correct, the cue will still fade out and end within the expected duration
+                self.fadeOut(contextFadeLoc + self.fadeOutTime);
+                    
+                // Handle FP and FA actions if they have not already been handled before the cue was paused
+                if (self.action.includes("F") && self.pausePoint < contextFadeLoc) {
+                    advance(self.targetId, self.action);
+                }
+            }
+    
+            // If the iteration should be over, check to see if the cue should go into another iteration or stop
+            if (self.context.currentTime >= contextStopLoc) {
+                if (self.currentLoop === self.loops) {
+                        
+                    // Stop playback and erase the active cue
+                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
+                        
+                    // Handle EA and EP actions
+                    // Handle FA and FP actions for cues with 0 second fadeouts
+                    if (self.action.includes("E") || (self.fadeOutTime === 0 && self.action.includes("F")))
+                        advance(self.targetId, self.action);
+                        
+                    self.stop();
+                } else {
+                        
+                    // Move to next iteration of the loop
+                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
+                        
+                    self.currentLoop++;
+                    resetProgressBar(self.cueNum);
+                        
+                    // Store the new iteration start and stop times (context clock)
+                    contextStartLoc += self.cueDuration - self.pausePoint;
+                    contextStopLoc += self.cueDuration;
+                    contextFadeLoc += self.cueDuration;
+                        
+                    // Reset pause to prevent compensating for it more than once
+                    self.pausePoint = 0;
+                        
+                    // Seek to the start position
+                    self.player.currentTime = self.startPos;
+                        
+                    // Fade in the next iteration
+                    fading = false; // Reset FADEOUT flag
+                    if (self.fadeInTime > 0)
+                        self.fadeIn(self.context.currentTime + self.fadeInTime);
+                }
+            }
+        }, 20);
+    }
     
     // contextStart - time on the context clock at which the current iteration of the cue started
     updateProgressDisplay(contextStart) {
@@ -477,7 +480,7 @@ class Preview {
         this.fadeInTime = parseInt(efadein.value);
         this.fadeOutTime = parseInt(efadeout.value);
         this.loops = parseInt(eloops.value);
-        this.currentLoop = 0;
+        this.currentLoop = 1;
     }
 
     // Scheduled playback and stopping using "time" parameter is no longer possible because of switch from buffered playback source
@@ -525,51 +528,7 @@ class Preview {
             self.player.play();
             self.player.oncanplaythrough = function() {};
             
-            self.currentLoop = 1;
-            var fading = false;
-            var contextStartLoc = self.context.currentTime;
-            var contextStopLoc = contextStartLoc + self.cueDuration;
-            var contextFadeLoc = contextStartLoc + self.cueDuration - self.fadeOutTime;
-            
-            // Fade in if the cue has a fade
-            if (self.fadeInTime > 0)
-                self.fadeIn(contextStartLoc + self.fadeInTime); // Scheduled to end at cue start + fade length
-            
-            console.log("Current time: " + self.context.currentTime +
-                      "\nAudio start position: " + self.startPos +
-                      "\nAudio stop position: " + self.stopPos +
-                      "\nContext stop time: " + contextStopLoc +
-                      "\nLoops: " + self.loops);
-            
-            self.intervalId = setInterval(function() {
-               
-                // If the cue has a fade, is not fading, and should be fading, start the fade
-                if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFadeLoc) {
-                    fading = true;
-                    self.fadeOut(self.context.currentTime + self.fadeOutTime); // Scheduled to end at current time + fade length
-                }
-    
-                // If the iteration should be over, check to see if the cue should go into another iteration or stop
-                if (self.context.currentTime >= contextStopLoc) {
-                    if (self.currentLoop === self.loops) {
-                        console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
-                        // Stop playback
-                        self.stop();
-                    } else {
-                        // Move to next iteration of the loop
-                        console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
-                        self.currentLoop++;
-                        contextStartLoc += self.cueDuration;
-                        contextStopLoc += self.cueDuration;
-                        contextFadeLoc += self.cueDuration - self.fadeOutTime;
-                        fading = false;
-                        
-                        self.player.currentTime = self.startPos; // Seek to the start position
-                        if (self.fadeInTime > 0)
-                            self.fadeIn(self.context.currentTime + self.fadeInTime);
-                    }
-                }
-            }, 20);
+            startTimer();
         };
     }
 
@@ -620,10 +579,57 @@ class Preview {
         // Real-time visual on volume fader in edit menu
         logVolSlide(this.context.currentTime, time, this.gainNode.gain.value, 0.001, this.vol);
     }
+
+    startTimer() {
+        var fading = false;
+        var contextStartLoc = self.context.currentTime;
+        var contextStopLoc = contextStartLoc + self.cueDuration;
+        var contextFadeLoc = contextStartLoc + self.cueDuration - self.fadeOutTime;
+            
+        // Fade in if the cue has a fade
+        if (self.fadeInTime > 0)
+            self.fadeIn(contextStartLoc + self.fadeInTime); // Scheduled to end at cue start + fade length
+            
+        console.log("Current time: " + self.context.currentTime +
+                    "\nAudio start position: " + self.startPos +
+                    "\nAudio stop position: " + self.stopPos +
+                    "\nContext stop time: " + contextStopLoc +
+                    "\nLoops: " + self.loops);
+            
+        self.intervalId = setInterval(function() {
+               
+            // If the cue has a fade, is not fading, and should be fading, start the fade
+            if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFadeLoc) {
+                fading = true;
+                self.fadeOut(self.context.currentTime + self.fadeOutTime); // Scheduled to end at current time + fade length
+            }
+    
+            // If the iteration should be over, check to see if the cue should go into another iteration or stop
+            if (self.context.currentTime >= contextStopLoc) {
+                if (self.currentLoop === self.loops) {
+                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
+                    // Stop playback
+                    self.stop();
+                } else {
+                    // Move to next iteration of the loop
+                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
+                    self.currentLoop++;
+                    contextStartLoc += self.cueDuration;
+                    contextStopLoc += self.cueDuration;
+                    contextFadeLoc += self.cueDuration - self.fadeOutTime;
+                    fading = false;
+                        
+                    self.player.currentTime = self.startPos; // Seek to the start position
+                    if (self.fadeInTime > 0)
+                        self.fadeIn(self.context.currentTime + self.fadeInTime);
+                }
+            }
+        }, 20);
+    }
 }
 
 
-class Wait {
+class WaitCue {
     
     constructor(context, cueNum) {
         this.context = context;
@@ -638,25 +644,7 @@ class Wait {
     
     play() {
         this.init();
-        
-        var self = this;
-        var contextStart = this.context.currentTime;
-        var contextStop = contextStart + this.duration;
-        
-        console.log("Wait started at: " + contextStart +
-                  "\nWait ends at: " + contextStop);
-        
-        this.intervalId = setInterval(function() {
-            self.updateProgressDisplay(contextStart);
-            
-            if (context.currentTime >= contextStop) {
-                // Handle EA, EP, FA, and FP actions
-                if (self.action.includes("E") || self.action.includes("F")) {
-                    advance(self.targetId, self.action);
-                }
-                self.stop();
-            }
-        }, 100);
+        this.startTimer();
     }
     
     stop() {
@@ -672,6 +660,27 @@ class Wait {
         console.dir(activeCues);
         checkButtonLock();
     }
+
+    startTimer() {
+        var self = this;
+        var contextStart = this.context.currentTime;
+        var contextStop = contextStart + this.duration;
+
+        console.log("Wait started at: " + contextStart +
+                  "\nWait ends at: " + contextStop);
+
+        this.intervalId = setInterval(function() {
+            self.updateProgressDisplay(contextStart);
+            
+            if (context.currentTime >= contextStop) {
+                // Handle EA, EP, FA, and FP actions
+                if (self.action.includes("E") || self.action.includes("F")) {
+                    advance(self.targetId, self.action);
+                }
+                self.stop();
+            }
+        }, 100);
+    }
     
     updateProgressDisplay(contextStart) {
         var now = this.context.currentTime;
@@ -686,7 +695,7 @@ class Wait {
 }
 
 
-class Control {
+class ControlCue {
     
     constructor(context, cueNum) {
         this.context = context;
@@ -925,7 +934,7 @@ function go(cueNum) {
         return;
     }
     if (ctype === "wait") {
-        var wait = new Wait(context, cueNum);
+        var wait = new WaitCue(context, cueNum);
         wait.play();
         activeCues[cueNum] = wait;
         return;
@@ -933,7 +942,6 @@ function go(cueNum) {
     if (ctype === "audio" || ctype === "blank_audio") {
         if (getFilename(cueNum) === "") {
             onscreenAlert("No file found for Cue #" + cueNum + ".");
-            // TODO: find a way to handle file not found in filesystem errors
             return;
         }
         if (activeCues[cueNum]) {
@@ -942,12 +950,12 @@ function go(cueNum) {
             return;
         }
     
-        var cue = new Playback(context, cueNum);
-        cue.play();
-        activeCues[cueNum] = cue;
+        var audio = new AudioCue(context, cueNum);
+        audio.play();
+        activeCues[cueNum] = audio;
     }
     if (ctype === "control") {
-        var control = new Control(context, cueNum);
+        var control = new ControlCue(context, cueNum);
         control.play();
         activeCues[cueNum] = control;
         return;
