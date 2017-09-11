@@ -638,7 +638,7 @@ class WaitCue {
     
     init() {
         this.duration = getCueDurInSecs(this.cueNum);
-        this.targetId = getTargetId(this.cueNum);
+        this.targetId = this.cueNum + 1;
         this.action = getAction(this.cueNum);
     }
     
@@ -1009,10 +1009,10 @@ function updateDisplays() {
         }
     }
 
-    if (nextVisualCue != -1 && currentCue - nextVisualCue <= cueBeforeBlackout) {
+    if (nextVisualCue != -1 && currentCue - nextVisualCue <= cuesBeforeBlackout) {
         var image = new Image(context, nextVisualCue);
         //image.
-        // Prime display, add to primed list as primed[cueNumber], check primed list before creating new in go()
+        // Prime display, add to primed list as primed[cueNumber], check primed list before creating new in go()    
     }
 }
 
