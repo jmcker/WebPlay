@@ -272,16 +272,16 @@
                     <tr>
                         <td colspan=2>
                             <input type="text" id="edit_filepath" class="long" disabled>
-                            <button onclick="deleteEditAudioFile()" id="edit_remove" class="edit-button">Remove</button>
-                            <input type="file" id="edit_file" name="file" class="edit-file" accept="audio/*">
+                            <button onclick="deleteEditMediaFile()" id="edit_remove" class="edit-button">Remove</button>
+                            <input type="file" id="edit_file" name="file" class="edit-file">
                         </td>
                     </tr>
                     <tr>
                         <td class="edit-spacer"></td>
                     </tr>
                     <tr>
-                        <td>
-                            <div class="edit-slider-box">
+                        <td id="edit_param_table3_audio_controls" class="visible">
+                            <div class="edit-left-box">
                                 Volume: <span id="edit_vol">0dB</span>
                                 <br>
                                 <input type="range" id="vol_in" min="-60" max="0" value="0">
@@ -292,6 +292,13 @@
                                 <br>
                                 <input type="range" id="pitch_in" min="75" max="125" value="100">
                                 <br>
+                            </div>
+                        </td>
+                        <td id="edit_param_table3_image_controls" class="visible">
+                            <div class="edit-left-box">
+                                Duration:<br>
+                                <input type="radio" id="durationUnitTime" name="durationUnit" value="time">Time
+                                <input type="radio" id="durationUnitCue" name="durationUnit" value="cue">Cue
                             </div>
                         </td>
                         <td>
@@ -343,31 +350,30 @@
                         <td class="edit-spacer"></td>
                     </tr>
                 </table>
-                <!-- Wait Cue Parameters -->
-                <table id="edit_param_table4" class="inner visible">
-                    <tr>
-                        <td>Min:
-                        </td>
-                        <td>Sec:
-                        </td>
-                        <td>MS:
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <input type="number" id="wait_min_in" class="edit-number" min="0" value="0">
-                        </td>
-                        <td>
-                            <input type="number" id="wait_sec_in" class="edit-number" min="0" value="0">
-                        </td>
-                        <td>
-                            <input type="number" id="wait_ms_in" class="edit-number" min="0" value="0">
-                        </td>
-                        <td>
-                            <button class="edit-clear-button" onclick="clearEditWaitDur()">Clear</button>
-                        </td>
-                    </tr>
-                </table>
+                <!-- Wait Cue and Image Cue Duration -->
+                <div id="edit_param_table4" class="inner visible">
+                    <table style="/*margin-left: auto; margin-right: 0;*/">
+                        <tr>
+                            <td>Min:</td>
+                            <td>Sec:</td>
+                            <td>MS:</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input type="number" id="wait_min_in" class="edit-number" min="0" value="0">
+                            </td>
+                            <td>
+                                <input type="number" id="wait_sec_in" class="edit-number" min="0" value="0">
+                            </td>
+                            <td>
+                                <input type="number" id="wait_ms_in" class="edit-number" min="0" value="0">
+                            </td>
+                            <td>
+                                <button class="edit-clear-button" onclick="clearEditTable4Dur()">Clear</button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
                 <!-- Control Cue Parameters -->
                 <table id="edit_param_table5" class="inner visible">
                     <tr>
@@ -417,6 +423,10 @@
                             <input type="number" id="edit_control_length" class="edit-number hidden" min="0" value="0">
                         </td>
                     </tr>
+                </table>
+                <!-- Image Parameters -->
+                <table id="edit_param_table6" class="inner visible">
+                    
                 </table>
                 <table class="edit-button-box">
                     <tr>
