@@ -929,15 +929,17 @@ function go(cueNum) {
         return;
     }
 
+    updateDisplays();
+
     if (ctype === "memo") {
         advance(cueNum + 1, "SA");
-        return;
+        return; // Only has SA actions
     }
     if (ctype === "wait") {
         var wait = new WaitCue(context, cueNum);
         wait.play();
         activeCues[cueNum] = wait;
-        return;
+        return; // Only has E actions
     }
     if (ctype === "audio" || ctype === "blank_audio") {
         if (getFilename(cueNum) === "") {
@@ -946,7 +948,6 @@ function go(cueNum) {
         }
         if (activeCues[cueNum]) {
             onscreenAlert("Cue #" + cueNum + " is already playing.");
-            //console.log("Cue #" + cueNum + " is already playing.");
             return;
         }
     
@@ -958,7 +959,12 @@ function go(cueNum) {
         var control = new ControlCue(context, cueNum);
         control.play();
         activeCues[cueNum] = control;
-        return;
+        return; // Handles S, E, and F actions
+    }
+    if (ctype === "image") {
+        var image = new ImageCue(context, cueNum);
+        image.play();
+        activeCues[cueNum] = image;
     }
     
     
@@ -991,6 +997,22 @@ function advance(targetId, action) {
     select(currentCue);
     if (action === "SP" || action === "EP" || action === "FP") {
         go(targetId);
+    }
+}
+
+function updateDisplays() {
+    var nextVisualCue = -1;
+    for (var i = currentCue; i <= cueListLength; i++) {
+        if (getType(i) === "image" || getType(i) === "video" || getType(i) === "HTML") {
+            nextVisualCue = i;
+            break;
+        }
+    }
+
+    if (nextVisualCue != -1 && currentCue - nextVisualCue <= cueBeforeBlackout) {
+        var image = new Image(context, nextVisualCue);
+        //image.
+        // Prime display, add to primed list as primed[cueNumber], check primed list before creating new in go()
     }
 }
 
