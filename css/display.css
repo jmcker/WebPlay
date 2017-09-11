@@ -2,7 +2,7 @@ body {
     margin: 0;
     background-color: black;
     opacity: 0;
-    transition: opacity 1s ease-in;
+    transition: opacity 1s ease-in-out;
 }
 
 .elem {
