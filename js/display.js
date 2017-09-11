@@ -9,16 +9,16 @@ class ImageCue {
         this.context = context;
         this.cueNum = cueNum;
 
+        this.image = new Image();
+
         this.paused = false;
         this.pausePoint = 0;
     }
     
     init() {
-        this.image = new Image();
+        this.image.className = "elem";
         this.image.src = filer.pathToFilesystemURL(this.filename);
         this.image.id = this.cueNum;
-        this.image.class = "elem";
-        this.image.style.transition = "opacity " + this.fadeInTime + "s ease-in-out";
         primeDisplay(this.display, this.cueNum, this.image); // Pre load file
     }
     
@@ -27,28 +27,41 @@ class ImageCue {
         this.display = getOutput(this.cueNum);
         this.fadeInTime = getFadeIn(this.cueNum);
         this.fadeOutTime = getFadeOut(this.cueNum);
-        this.duration = getCueDur(this.cueNum);
+        this.duration = getCueDurInSecs(this.cueNum);
         this.action = getAction(this.cueNum);
         this.targetId = getTargetId(this.cueNum);
+        this.timeBased = getIsTimeBased(this.cueNum);
     }
 
     play() {
-        
+
+        var self = this;
         this.syncParams();
+        this.image.onload = function() {
+            console.log("loaded");
+            //this.image.style.transitionDuration = self.fadeInTime;
+            self.image.style.transition = "opacity " + self.fadeInTime + "s ease-in-out";
+            console.log(self.image);
+
+            revealContent(self.display, self.cueNum);
+            self.startTimer();
+        };
         this.init();
+        console.log(this.image);
 
         if (this.image.src === "" || !this.image.src) {
             onscreenAlert("File " + filename + " not found for Display #" + id + "."); // Alert main show window
             return;
         }
 
-        revealContent(this.display, this.cueNum);
-        this.startTimer();
-
+        if (!displays[this.display].iframe.contentWindow.document.body.classList.contains("active")) {
+            onscreenAlert("Warning: Display #" + this.display + " is AV muted.", 5);
+        }
     }
 
     stop() {
         clearInterval(this.intervalId);
+        this.image.style.transition = ""; // Remove fades
         hideContent(this.display, this.cueNum);
         this.image.parentNode.removeChild(this.image); // Remove from display window
         console.log("Stopped Cue #" + this.cueNum + ".");
@@ -76,14 +89,14 @@ class ImageCue {
             return;
 
         this.image.style.transition = "opacity " + length + "s ease-in-out";
-        hideContent(this.displayId, this.cueNum);
+        hideContent(this.display, this.cueNum);
     }
 
     fadeIn(time) {
         var length = (time) ? time - this.context.currentTime : this.fadeOutTime;
         
         this.image.style.transition = "opacity " + length + "s ease-in-out";
-        revealContent(this.displayId, this.cueNum);
+        revealContent(this.display, this.cueNum);
     }
     
 
@@ -91,7 +104,7 @@ class ImageCue {
         var length = (time) ? time - this.context.currentTime : this.fadeOutTime;
         
         this.image.style.transition = "opacity " + length + "s ease-in-out";
-        hideContent(this.displayId, this.cueNum);
+        hideContent(this.display, this.cueNum);
     }
 
     startTimer() {
@@ -107,10 +120,10 @@ class ImageCue {
         this.intervalId = setInterval(function() {
             self.updateProgressDisplay(contextStart);
             
-            if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFadeLoc) {
+            if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFade) {
                 fading = true;
 
-                self.fadeOutTime(contextFade + self.fadeOutTime);
+                self.fadeOut(contextFade + self.fadeOutTime);
 
                 // Handle FP and FA actions
                 if (self.action.includes("F")) {
@@ -464,12 +477,9 @@ function revealContent(displayId, elemId) {
     for (var i = 0; i < elems.length; i++) {
         elems[i].classList.remove("active");
     }
-    // Non-active elements, whether used or unused, remain in DOM
-    // TODO: should they be removed? 
 
     // Show new content
     displays[displayId].iframe.contentWindow.document.getElementById(elemId).classList.add("active");
-    //displays[displayId].iframe.contentWindow.document.getElementById(elemId).style.opacity = 1;
 }
 
 // Sets the opacity of the element specified by elemId to 0
@@ -480,124 +490,4 @@ function hideContent(displayId, elemId) {
     }
 
     displays[displayId].iframe.contentWindow.document.getElementById(elemId).classList.remove("active");
-}
-
-
-
-
-// For reference
-function readFilexxxx(i) {
-
-    var entry = entries[i];
-
-    try {
-        filer.open(entry.name, function(file) {
-            
-            togglePreview(true); // Show the preview 
-
-            fileInfo = document.getElementById("file_preview_info");
-            fileInfo.rows[0].innerHTML = ["<td><b>", file.name, "</b></td>"].join("");
-            fileInfo.rows[1].innerHTML = ["<td>Type: ", (file.type ? file.type : Util.getFileExtension(file.name) ? Util.getFileExtension(file.name) : ""), "</td><td>Size: ", (file.size / 1024 / 1024).toFixed(2), " MB</td>"].join("");
-            fileInfo.rows[2].innerHTML = ["<td>Last modified: ", file.lastModifiedDate.toLocaleDateString(), "</td>"].join("");
-            fileInfo.rows[3].innerHTML = "";
-
-            if (file.type.match(/audio.*/)) {
-                var player = document.createElement("audio");
-                player.controls = true;
-                player.style.width = "75%";
-                player.style.paddingTop = "20px"
-                player.src = entry.toURL();
-
-                filePreview.appendChild(player);
-
-                player.load();
-                player.play();
-                
-            } else if (file.type.match(/video.*/)) {
-                var player = document.createElement("video");
-                player.controls = true;
-                player.style.width = "75%";
-                player.src = entry.toURL();
-                
-                filePreview.appendChild(player);
-                
-                player.load();
-                player.play();
-                
-            } else if (file.type.match(/text.*/) || file.type.match(/application\/pdf/)) {
-                var iframe = document.createElement("iframe");
-                iframe.style.width = "98%";
-                iframe.style.height = "97%";
-                iframe.style.minHeight = "350px";
-                
-                // Display a full preview of the cue list file
-                if (file.name === "cue_list_content.html") {
-                    // Plain text toggle
-                    fileInfo.rows[3].innerHTML = "<td><button onclick=\"togglePlainTextPreview(); readFile(" + i + ")\">Toggle: HTML / Plain Text</button></td>";
-                    //fileInfo.rows[3].innerHTML = "<td><input type=\"radio\" name=\"prev\" checked>HTML <input type=\"radio\" name=\"prev\">Plain Text"; // Needs onchange function
-                    //fileInfo.rows[3].innerHTML = "<td><a href=\"javascript:void(0);\" onclick=\"togglePlainTextPreview(false); readFile(" + i + ")\">HTML</a> / <a href=\"javascript:void(0);\" onclick=\"togglePlainTextPreview(true); readFile(" + i + ")\">Plain Text</a></td>";
-                    
-                    // Cue list preview
-                    var html = "<table id=\"cue_list\" class=\"cue-list\" style=\"top: 0; left: 0;\">";
-                    var css = "<link href=\"css/style.css\" rel=\"stylesheet\" type=\"text/css\">"
-                    var reader = new FileReader();
-                    reader.onload = function(e) {
-                        if (!plainTextPreview) {
-                            html += e.target.result;
-                            html += "</table>";
-                            // Also possible to use the srcdoc attribute
-                            iframe.onload = function() {
-                                iframe.contentWindow.document.head.innerHTML = css;
-                                iframe.contentWindow.document.body.innerHTML = html;
-                            }
-                            filePreview.appendChild(iframe);
-                        } else {
-                            var textarea = document.createElement("textarea");
-                            textarea.style.width = "98%";
-                            textarea.style.height = "350px";
-                            textarea.textContent = e.target.result;
-                            filePreview.appendChild(textarea);
-                        }
-                    };
-                    reader.readAsText(file);
-                    
-                } else {
-                    iframe.src = entry.toURL();
-                    filePreview.appendChild(iframe);
-                }
-
-            } else if (file.type.match(/image.*/)) {
-
-                var img = new Image();
-                img.className = "hidden";
-                img.onload = function() {
-                    // TODO: implement fade in
-                    img.className = "";
-                }
-                img.style.width = "80%";
-                img.src = entry.toURL();
-
-                filePreview.appendChild(img);
-
-            } else if (PREVIEWABLE_FILES.indexOf(Util.getFileExtension(file.name)) != -1) {
-                var reader = new FileReader();
-                reader.onload = function(e) {
-                    var textarea = document.createElement("textarea");
-                    textarea.style.width = "98%";
-                    textarea.style.height = "350px";
-                    textarea.textContent = e.target.result;
-                    filePreview.appendChild(textarea);
-                };
-                reader.readAsText(file);
-            } else {
-                console.log("No preview available -- file type: " + file.type + ", extension: " + Util.getFileExtension(file.name));
-                var p = document.createElement("p");
-                p.textContent = "No preview."
-                filePreview.appendChild(p);
-            }
-
-        }, onError);
-    } catch (e) {
-        onError(e);
-    }
 }
