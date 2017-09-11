@@ -3,49 +3,145 @@ var nextDisplayId = 1;
 var cuesBeforeBlackout = 1; // TODO: editable in display settings
 var fadeInTime = 1;
 
-class Image {
+class ImageCue {
     
     constructor(context, cueNum) {
-        this.context = context; // Used for timing
+        this.context = context;
         this.cueNum = cueNum;
+
+        this.paused = false;
+        this.pausePoint = 0;
     }
     
     init() {
-
-
+        this.image = new Image();
+        this.image.src = filer.pathToFilesystemURL(this.filename);
+        this.image.id = this.cueNum;
+        this.image.class = "elem";
+        this.image.style.transition = "opacity " + this.fadeInTime + "s ease-in-out";
+        primeDisplay(this.display, this.cueNum, this.image); // Pre load file
     }
     
     syncParams() {
+        this.filename = getFilename(this.cueNum);
         this.display = getOutput(this.cueNum);
         this.fadeInTime = getFadeIn(this.cueNum);
         this.fadeOutTime = getFadeOut(this.cueNum);
-        this.cueDuration = getCueDuration(this.cueNum);
+        this.duration = getCueDur(this.cueNum);
         this.action = getAction(this.cueNum);
+        this.targetId = getTargetId(this.cueNum);
     }
 
     play() {
         
+        this.syncParams();
+        this.init();
+
+        if (this.image.src === "" || !this.image.src) {
+            onscreenAlert("File " + filename + " not found for Display #" + id + "."); // Alert main show window
+            return;
+        }
+
+        revealContent(this.display, this.cueNum);
+        this.startTimer();
+
     }
 
     stop() {
+        clearInterval(this.intervalId);
+        hideContent(this.display, this.cueNum);
+        this.image.parentNode.removeChild(this.image); // Remove from display window
+        console.log("Stopped Cue #" + this.cueNum + ".");
+
+        setElapsed(this.cueNum, null);
+        setRemaining(this.cueNum, null);
+        resetProgressBar(this.cueNum);
+        delete activeCues[this.cueNum];
+        console.log("Removed Cue #" + this.cueNum + " from the currently playing list.");
+        
+        checkButtonLock();
+
+    }
+
+    pause() {
+        
+    }
+
+    resume() {
         
     }
 
     fade(length) {
-        
+        if (length < 0)
+            return;
+
+        this.image.style.transition = "opacity " + length + "s ease-in-out";
+        hideContent(this.displayId, this.cueNum);
     }
 
-    fadeIn() {
+    fadeIn(time) {
+        var length = (time) ? time - this.context.currentTime : this.fadeOutTime;
         
+        this.image.style.transition = "opacity " + length + "s ease-in-out";
+        revealContent(this.displayId, this.cueNum);
     }
     
-    fadeOut() {
+
+    fadeOut(time) {
+        var length = (time) ? time - this.context.currentTime : this.fadeOutTime;
         
+        this.image.style.transition = "opacity " + length + "s ease-in-out";
+        hideContent(this.displayId, this.cueNum);
+    }
+
+    startTimer() {
+        var self = this;
+        var fading = false;
+        var contextStart = this.context.currentTime;
+        var contextStop = contextStart + this.duration;
+        var contextFade = contextStop - this.fadeOutTime;
+        
+        console.log("Image started at: " + contextStart);
+        console.log("Image ends at: " + contextStop);
+        
+        this.intervalId = setInterval(function() {
+            self.updateProgressDisplay(contextStart);
+            
+            if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFadeLoc) {
+                fading = true;
+
+                self.fadeOutTime(contextFade + self.fadeOutTime);
+
+                // Handle FP and FA actions
+                if (self.action.includes("F")) {
+                    advance(self.targetId, self.action);
+                }
+            }
+
+            if (context.currentTime >= contextStop) {
+                // Handle EA, EP, and 0s F actions
+                if (self.action.includes("E") || (self.fadeOutTime === 0 && self.action.includes("F")))
+                    advance(self.targetId, self.action);
+
+                self.stop();
+            }
+        }, 100);
+    }
+    
+    updateProgressDisplay(contextStart) {
+        var now = this.context.currentTime;
+        var elapsed = (now - contextStart).toFixed(2);
+        var remaining = (this.duration - elapsed).toFixed(2);
+        var percentDone = parseInt(elapsed / this.duration * 100);
+        
+        setElapsed(this.cueNum, elapsed);
+        setRemaining(this.cueNum, remaining);
+        updateProgressBar(this.cueNum, percentDone, remaining);
     }
     
 }
 
-class Video {
+class VideoCue {
     
     constructor(context, cueNum) {
         this.context = context;
@@ -301,28 +397,17 @@ function closeAllDisplays(silent) {
 }
 
 // Pre load files and open fullscreen display before content needs to be shown
-function primeDisplay(id, filename, cueNumber) {
+function primeDisplay(id, cueNumber, content) {
     if (!displays[id] || displays[id].window.closed) {
         onscreenAlert("Display #" + id + " is not active.");
-        console.log("Display #" + id + " is not active.");
         return;
-    }
-    
-    var fsUrl = "";
-    if (filename) {
-        fsUrl = filer.pathToFilesystemURL(filename);
-        if (fsUrl === "" || !fsUrl)
-            onscreenAlert("File " + filename + " not found for Display #" + id + "."); // Alert main show window
     }
     
     var iframe = displays[id].iframe; // Local reference to frame
     
-    displays[id].window.focus(); // Bring window to front
-    iframe.contentWindow.document.body.innerHTML += "<img id=\"" + cueNumber + "\" src=\"" + fsUrl + "\" class=\"elem\">";
-    console.log(iframe.contentWindow);
-    // TODO: look into working around cross-domain problems for iframes
-    //address = "https://stackoverflow.com/";
-    //iframe.src = address;
+    displays[id].window.focus(); // Bring window forward
+    iframe.contentWindow.document.body.appendChild(content);
+    
     initiateFullscreen(iframe);
 }
 
@@ -330,6 +415,9 @@ function initiateFullscreen(iframe) {
     var requestFullScreen = iframe.requestFullScreen || iframe.mozRequestFullScreen || iframe.webkitRequestFullScreen;
     if (requestFullScreen) {
         requestFullScreen.bind(iframe)();
+    } else {
+        onscreenAlert("Fullscreen access is not supported.");
+        alert("Fullscreen access is not supported.");
     }
 }
 
@@ -363,7 +451,7 @@ function toggleBodyContent(id) {
 }
 
 // Sets the opacity of the element specified by elemId to 1
-// Default id for elements is their filename
+// Default id for elements is their cue number
 function revealContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
         onscreenAlert("Display #" + displayId + " is not active.");
@@ -385,7 +473,7 @@ function revealContent(displayId, elemId) {
 }
 
 // Sets the opacity of the element specified by elemId to 0
-// Default id for elements is their filename
+// Default id for elements is their cue number
 function hideContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
         onscreenAlert("Display #" + displayId + " is not active.");
