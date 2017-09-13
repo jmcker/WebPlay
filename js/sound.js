@@ -370,7 +370,11 @@ class AudioCue {
                     
                 // Handle FP and FA actions if they have not already been handled before the cue was paused
                 if (self.action.includes("F") && self.pausePoint < contextFadeLoc) {
-                    advance(self.targetId, self.action);
+                    if (self.targetId == 0) {
+                        advance (self.cueNum + 1, self.action);
+                    } else {
+                        advance(self.targetId, self.action);
+                    }
                 }
             }
     
@@ -383,8 +387,13 @@ class AudioCue {
                         
                     // Handle EA and EP actions
                     // Handle FA and FP actions for cues with 0 second fadeouts
-                    if (self.action.includes("E") || (self.fadeOutTime === 0 && self.action.includes("F")))
-                        advance(self.targetId, self.action);
+                    if (self.action.includes("E") || (self.fadeOutTime === 0 && self.action.includes("F"))) {
+                        if (self.targetId == 0) {
+                            advance (self.cueNum + 1, self.action);
+                        } else {
+                            advance(self.targetId, self.action);
+                        }
+                    }
                         
                     self.stop();
                 } else {
@@ -675,7 +684,11 @@ class WaitCue {
             if (context.currentTime >= contextStop) {
                 // Handle EA, EP, FA, and FP actions
                 if (self.action.includes("E") || self.action.includes("F")) {
-                    advance(self.targetId, self.action);
+                    if (self.targetId == 0) {
+                        advance (self.cueNum + 1, self.action);
+                    } else {
+                        advance(self.targetId, self.action);
+                    }
                 }
                 self.stop();
             }
@@ -704,8 +717,10 @@ class ControlCue {
     
     init() {
         this.duration = getFileDurInSecs(this.cueNum);
-        this.targetId = getControlTargetId(this.cueNum);
-        this.action = getControlAction(this.cueNum);
+        this.targetId = getTargetId(this.cueNum);
+        this.action = getAction(this.cueNum);
+        this.ctargetId = getControlTargetId(this.cueNum);
+        this.caction = getControlAction(this.cueNum);
         
         var params = getControlActionParams(this.cueNum);
         this.length = parseFloat(params.length);
@@ -719,122 +734,122 @@ class ControlCue {
         this.init();
         
         // Target is previous cue and previous cue does not exist
-        if (this.targetId > cueListLength || this.targetId === 0 && currentCue === 1) {
+        if (this.ctargetId > cueListLength || this.ctargetId === 0 && currentCue === 1) {
             checkButtonLock();
             this.stop();
-        } else if (this.targetId === 0) {
-            this.targetId = this.cueNum - 1;
+        } else if (this.ctargetId === 0) {
+            this.ctargetId = this.cueNum - 1;
         }
         
         		// TODO: Add methods to take caare of displays
-		switch (this.action) {
+		switch (this.caction) {
 			case "cue_start":
-				go(this.targetId);
+				go(this.ctargetId);
 				break;
 			case "cue_stop":
-				if (activeCues[this.targetId]) {
-					activeCues[this.targetId].stop();
+				if (activeCues[this.ctargetId]) {
+					activeCues[this.ctargetId].stop();
 				} else {
-					onscreenAlert("Cue #" + this.targetId + " is not playing.");
+					onscreenAlert("Cue #" + this.ctargetId + " is not playing.");
 					this.stop();
                     return;
 				}
 				break;
 			case "cue_fade":
-				if (activeCues[this.targetId]) {
-					activeCues[this.targetId].fade(this.length);
+				if (activeCues[this.ctargetId]) {
+					activeCues[this.ctargetId].fade(this.length);
 				} else {
-					onscreenAlert("Cue #" + this.targetId + " is not playing");
+					onscreenAlert("Cue #" + this.ctargetId + " is not playing");
 					this.stop();
                     return;
 				}
 				break;
 			case "cue_pause":
-				if (activeCues[this.targetId]) {
-				    if (MEDIA_CUE_TYPES.includes(getType(this.targetId))) {
-					    activeCues[this.targetId].pause();
+				if (activeCues[this.ctargetId]) {
+				    if (MEDIA_CUE_TYPES.includes(getType(this.ctargetId))) {
+					    activeCues[this.ctargetId].pause();
 				    } else {
-				        onscreenAlert("Cue #" + this.targetId + " cannot be paused.")
+				        onscreenAlert("Cue #" + this.ctargetId + " cannot be paused.")
                         this.stop();
                         return;
 				    }
 				} else {
-					onscreenAlert("Cue #" + this.targetId + " is not playing.");
+					onscreenAlert("Cue #" + this.ctargetId + " is not playing.");
 					this.stop();
                     return;
 				}
 				break;
 			case "cue_resume":
-				if (activeCues[this.targetId]) {
-					if (MEDIA_CUE_TYPES.includes(getType(this.targetId)) && activeCues[this.targetId].paused) {
-					    activeCues[this.targetId].resume();
+				if (activeCues[this.ctargetId]) {
+					if (MEDIA_CUE_TYPES.includes(getType(this.ctargetId)) && activeCues[this.ctargetId].paused) {
+					    activeCues[this.ctargetId].resume();
 				    } else {
-				        onscreenAlert("Cue #" + this.targetId + " cannot be resumed.")
+				        onscreenAlert("Cue #" + this.ctargetId + " cannot be resumed.")
                         this.stop();
                         return;
 				    }
 				} else {
-				    onscreenAlert("Cue #" + this.targetId + " is not paused.");
+				    onscreenAlert("Cue #" + this.ctargetId + " is not paused.");
 					this.stop();
                     return;
 				}
 				break;
 			case "vol_change":
-				if (activeCues[this.targetId]) {
-                    if (AUDIO_MEDIA_CUE_TYPES.includes(getType(this.targetId))) {
-					    activeCues[this.targetId].volumeChange(this.volume, this.length);
+				if (activeCues[this.ctargetId]) {
+                    if (AUDIO_MEDIA_CUE_TYPES.includes(getType(this.ctargetId))) {
+					    activeCues[this.ctargetId].volumeChange(this.volume, this.length);
 				    } else {
-				        onscreenAlert("Cue #" + this.targetId + " does not have audio.")
+				        onscreenAlert("Cue #" + this.ctargetId + " does not have audio.")
                         this.stop();
                         return;
 				    }
 				} else {
-					onscreenAlert("Cue #" + this.targetId + " is not playing.");
+					onscreenAlert("Cue #" + this.ctargetId + " is not playing.");
 					this.stop();
                     return;
 				}
 				break;
 			case "pan_change":
-				if (activeCues[this.targetId]) {
-				    console.dir(activeCues[this.targetId].panNode.pan);
+				if (activeCues[this.ctargetId]) {
+				    console.dir(activeCues[this.ctargetId].panNode.pan);
 				    console.log(this.context.currentTime);
 				    console.log(this.context.currentTime + this.length);
-					activeCues[this.targetId].panNode.pan.linearRampToValueAtTime(this.pan, this.context.currentTime + this.length);
+					activeCues[this.ctargetId].panNode.pan.linearRampToValueAtTime(this.pan, this.context.currentTime + this.length);
 					// TODO: Real-time pan visual in edit cue menu
 				} else {
-					onscreenAlert("Cue #" + this.targetId + " is not playing.");
+					onscreenAlert("Cue #" + this.ctargetId + " is not playing.");
 					this.stop();
                     return;
 				}
 				break;
 			case "pitch_change":
-				if (activeCues[this.targetId]) {
+				if (activeCues[this.ctargetId]) {
 					alert("TODO");
 					// TODO: Real-time pitch visual in edit cue menu
 				} else {
-					onscreenAlert("Cue #" + this.targetId + " is not playing.");
+					onscreenAlert("Cue #" + this.ctargetId + " is not playing.");
 					this.stop();
                     return;
 				}
 				break;
 			case "exit_loop":
-				if (activeCues[this.targetId]) {
-                    if (AUDIO_MEDIA_CUE_TYPES.includes(getType(this.targetId))) {
-					    activeCues[this.targetId].currentLoop = activeCues[this.targetId].loops;
+				if (activeCues[this.ctargetId]) {
+                    if (AUDIO_MEDIA_CUE_TYPES.includes(getType(this.ctargetId))) {
+					    activeCues[this.ctargetId].currentLoop = activeCues[this.ctargetId].loops;
 				    } else {
-				        onscreenAlert("Cue #" + this.targetId + " does not have loops.")
+				        onscreenAlert("Cue #" + this.ctargetId + " does not have loops.")
                         this.stop();
                         return;
 				    }
 				} else {
-					onscreenAlert("Cue #" + this.targetId + " is not playing.");
+					onscreenAlert("Cue #" + this.ctargetId + " is not playing.");
 					this.stop();
                     return;
 				}
 				break;
 			case "set_position":
 				alert("TODO");
-				if (activeCues[this.targetId]) {
+				if (activeCues[this.ctargetId]) {
 					// Update displays with context.currentTime - setPosition
 				} else {}
 				
@@ -849,13 +864,13 @@ class ControlCue {
 				fadeAllPrevious(this.cueNum, this.length);
 				break;
 			default:
-				onscreenAlert("Control action " + this.action + " could not be applied to Cue #" + this.targetId + ".");
+				onscreenAlert("Control action " + this.caction + " could not be applied to Cue #" + this.ctargetId + ".");
 				break;
 		}
 		
 		// Check advance action
-		if (getAction(this.cueNum) === "SP" || getAction(this.cueNum) === "SA")
-			advance(getTargetId(this.cueNum), getAction(this.cueNum));
+		if (this.action === "SP" || this.action === "SA")
+			advance(this.targetId, this.action);
 
         if (this.duration > 0) {
 		    this.startTimer();
@@ -872,10 +887,8 @@ class ControlCue {
         setRemaining(this.cueNum, null);
         resetProgressBar(this.cueNum);
         
-        console.log(activeCues[this.cueNum])
-        console.log(delete activeCues[this.cueNum]);
+        delete activeCues[this.cueNum];
         console.log("Removed Cue #" + this.cueNum + " from the currently playing list.");
-        console.dir(activeCues);
         checkButtonLock();
     }
     
@@ -893,7 +906,11 @@ class ControlCue {
             if (context.currentTime >= contextStop) {
                 // Handle EA, EP, FA, and FP actions
                 if (self.action.includes("E") || self.action.includes("F")) {
-                    advance(self.targetId, self.action);
+                    if (self.targetId == 0) {
+                        advance (self.cueNum + 1, self.action);
+                    } else {
+                        advance(self.targetId, self.action);
+                    }
                 }
                 self.stop();
             }
@@ -967,7 +984,6 @@ function go(cueNum) {
     }
 
     // Update and prime displays if applicable
-    console.log(cueNum);
     updateDisplays(cueNum);
 
     if (ctype === "memo") {
