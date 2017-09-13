@@ -99,11 +99,34 @@ class ImageCue {
     }
 
     pause() {
+        if (this.paused) {
+            onscreenAlert("Cue #" + this.cueNum + " is already paused.");
+            return;
+        }
         
+        this.paused = true;
+        clearInterval(this.intervalId); // Stop updating progress bars and checking the clock
+        this.pausePoint = getElapsed(this.cueNum);
+        
+        // Add yellow progress bar
+        document.getElementById(this.cueNum + "0005").style.backgroundImage = "url(images/yellow-dot.jpg)";
+        
+        console.log("Paused Cue #" + this.cueNum + " at " + secToTime(getElapsed(this.cueNum)) + ".");
     }
 
     resume() {
+        if (!this.paused) {
+            onscreenAlert("Cannot resume. Cue #" + this.cueNum + " is not paused.");
+            return;
+        }
         
+        // Remove yellow progress bar and allow CSS to take back over
+        document.getElementById(this.cueNum + "0005").style.backgroundImage = "";
+        
+        // Resume playback
+        this.play();
+        
+        console.log("Resumed Cue #" + this.cueNum + " at " + secToTime(getElapsed(this.cueNum)) + ".");
     }
 
     fade(length) {
@@ -136,33 +159,45 @@ class ImageCue {
         var self = this;
         var fading = false;
         var contextStart = this.context.currentTime;
-        var contextStop = contextStart + this.duration;
-        var contextFade = contextStop - this.fadeOutTime;
+        var contextStop = contextStart + this.duration - this.pausePoint;
+        var contextFade = contextStop - this.fadeOutTime - this.pausePoint;
         
         console.log("Image started at: " + contextStart);
         console.log("Image ends at: " + contextStop);
         
         this.intervalId = setInterval(function() {
-            self.updateProgressDisplay(contextStart);
+            self.updateProgressDisplay(contextStart - self.pausePoint);
             
             if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFade) {
                 fading = true;
 
-                self.fadeOut(contextFade + self.fadeOutTime);
+                self.fadeOut(); // Use this.fadeOutTime
 
-                // Handle FP and FA actions
-                if (self.action.includes("F")) {
-                    advance(self.targetId, self.action);
+                // Handle FP and FA actions if not already handled before pause
+                if (self.action.includes("F") && self.pausePoint < contextFade) {
+                    if (self.targetId == 0) {
+                        advance (self.cueNum + 1, self.action);
+                    } else {
+                        advance(self.targetId, self.action);
+                    }
                 }
             }
 
             if (context.currentTime >= contextStop) {
                 // Handle EA, EP, and 0s F actions
-                if (self.action.includes("E") || (self.fadeOutTime === 0 && self.action.includes("F")))
-                    advance(self.targetId, self.action);
+                if (self.action.includes("E") || (self.fadeOutTime === 0 && self.action.includes("F"))) {
+                    if (self.targetId == 0) {
+                        advance (self.cueNum + 1, self.action);
+                    } else {
+                        advance(self.targetId, self.action);
+                    }
+                }
 
                 self.stop();
             }
+
+            // Reset flag
+            self.paused = false;
         }, 100);
     }
     
@@ -186,6 +221,13 @@ class VideoCue {
         this.cueNum = cueNum;
         this.globalPanNode = globalPanNode;
         this.globalGainNode = globalGainNode;
+
+        this.video = new Video();
+
+        this.paused = false;
+        this.pausePoint = 0;
+
+        this.primed = false;
     }
     
     init() {
