@@ -3,6 +3,11 @@ var primed = {};
 var cuesBeforeBlackout = 3; // TODO: editable in display settings
 var GLOBAL_VISUAL_FADE_TIME = 1;
 
+// Cue type lists
+var MEDIA_CUE_TYPES = ["audio", "blank_audio", "image", "video", "HTML"];
+var AUDIO_MEDIA_CUE_TYPES = ["audio", "blank_audio", "video"]
+var VISUAL_MEDIA_CUE_TYPES = ["image", "video", "HTML"];
+
 class ImageCue {
     
     constructor(context, cueNum) {
