@@ -1,7 +1,7 @@
 var displays = {};
-var nextDisplayId = 1;
-var cuesBeforeBlackout = 1; // TODO: editable in display settings
-var fadeInTime = 1;
+var primed = {};
+var cuesBeforeBlackout = 3; // TODO: editable in display settings
+var GLOBAL_VISUAL_FADE_TIME = 1;
 
 class ImageCue {
     
@@ -13,13 +13,32 @@ class ImageCue {
 
         this.paused = false;
         this.pausePoint = 0;
+
+        this.primed = false;
     }
     
-    init() {
-        this.image.className = "elem";
+    init(reveal) {
+        reveal = reveal || false;
+        this.syncParams();
+
+        var self = this;
+        this.image.onload = function() {
+            self.image.style.transition = "opacity " + self.fadeInTime + "s ease-in-out";
+            self.image.classList.remove("loading");
+
+            if (reveal && self.primed) {
+                revealContent(self.display, self.cueNum);
+                self.startTimer();
+            } else if (!self.primed) {
+                self.stop();
+                return;
+            }
+        };
+
+        this.image.className = "elem loading";
         this.image.src = filer.pathToFilesystemURL(this.filename);
         this.image.id = this.cueNum;
-        primeDisplay(this.display, this.cueNum, this.image); // Pre load file
+        this.primed = (primeDisplay(this.display, this.image) == null) ? false : true; // Pre-load file
     }
     
     syncParams() {
@@ -34,27 +53,23 @@ class ImageCue {
     }
 
     play() {
+        console.log("primed: " + this.primed);
+        // Check if display is primed and if image is loaded
+        if (!this.primed || this.image.classList.contains("loading")) {
+            this.init(true); // Prime, load, and reveal image
+        } else {
+            if (this.image.src === "" || !this.image.src) {
+                onscreenAlert("File " + this.filename + " not found for Display #" + this.display + "."); // Alert main window
+                this.stop();
+                return;
+            }
 
-        var self = this;
-        this.syncParams();
-        this.image.onload = function() {
-            console.log("loaded");
-            //this.image.style.transitionDuration = self.fadeInTime;
-            self.image.style.transition = "opacity " + self.fadeInTime + "s ease-in-out";
-            console.log(self.image);
-
-            revealContent(self.display, self.cueNum);
-            self.startTimer();
-        };
-        this.init();
-        console.log(this.image);
-
-        if (this.image.src === "" || !this.image.src) {
-            onscreenAlert("File " + filename + " not found for Display #" + id + "."); // Alert main show window
-            return;
+            revealContent(this.display, this.cueNum);
+            this.startTimer();
         }
 
-        if (!displays[this.display].iframe.contentWindow.document.body.classList.contains("active")) {
+        // Warn if display is muted
+        if (displays[this.display] && !displays[this.display].iframe.contentWindow.document.body.classList.contains("active")) {
             onscreenAlert("Warning: Display #" + this.display + " is AV muted.", 5);
         }
     }
@@ -63,7 +78,9 @@ class ImageCue {
         clearInterval(this.intervalId);
         this.image.style.transition = ""; // Remove fades
         hideContent(this.display, this.cueNum);
-        this.image.parentNode.removeChild(this.image); // Remove from display window
+        if (this.image.parentNode) {
+            this.image.parentNode.removeChild(this.image); // Remove from display window
+        }
         console.log("Stopped Cue #" + this.cueNum + ".");
 
         setElapsed(this.cueNum, null);
@@ -85,15 +102,18 @@ class ImageCue {
     }
 
     fade(length) {
+        length = length || GLOBAL_VISUAL_FADE_TIME;
         if (length < 0)
             return;
 
         this.image.style.transition = "opacity " + length + "s ease-in-out";
         hideContent(this.display, this.cueNum);
+
+        setTimeout(function() { self.stop(); }, length * 1000 + 10); // Padded 10 ms
     }
 
     fadeIn(time) {
-        var length = (time) ? time - this.context.currentTime : this.fadeOutTime;
+        var length = (time) ? time - this.context.currentTime : this.fadeOutTime || GLOBAL_VISUAL_FADE_TIME;
         
         this.image.style.transition = "opacity " + length + "s ease-in-out";
         revealContent(this.display, this.cueNum);
@@ -101,7 +121,7 @@ class ImageCue {
     
 
     fadeOut(time) {
-        var length = (time) ? time - this.context.currentTime : this.fadeOutTime;
+        var length = (time) ? time - this.context.currentTime : this.fadeOutTime || GLOBAL_VISUAL_FADE_TIME;
         
         this.image.style.transition = "opacity " + length + "s ease-in-out";
         hideContent(this.display, this.cueNum);
@@ -410,10 +430,10 @@ function closeAllDisplays(silent) {
 }
 
 // Pre load files and open fullscreen display before content needs to be shown
-function primeDisplay(id, cueNumber, content) {
+function primeDisplay(id, content) {
     if (!displays[id] || displays[id].window.closed) {
-        onscreenAlert("Display #" + id + " is not active.");
-        return;
+        onscreenAlert("Display #" + id + " is not active for Cue #" + content.id + ".");
+        return null;
     }
     
     var iframe = displays[id].iframe; // Local reference to frame
@@ -422,6 +442,8 @@ function primeDisplay(id, cueNumber, content) {
     iframe.contentWindow.document.body.appendChild(content);
     
     initiateFullscreen(iframe);
+
+    return true;
 }
 
 function initiateFullscreen(iframe) {
@@ -468,6 +490,7 @@ function toggleBodyContent(id) {
 function revealContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
         onscreenAlert("Display #" + displayId + " is not active.");
+        return;
     }
 
     displays[displayId].window.focus();
@@ -487,7 +510,10 @@ function revealContent(displayId, elemId) {
 function hideContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
         onscreenAlert("Display #" + displayId + " is not active.");
+        return;
     }
-
-    displays[displayId].iframe.contentWindow.document.getElementById(elemId).classList.remove("active");
+    var elem = displays[displayId].iframe.contentWindow.document.getElementById(elemId);
+    if (elem) {
+        elem.classList.remove("active");
+    }
 }
