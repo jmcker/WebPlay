@@ -1044,6 +1044,8 @@ function advance(targetId, action) {
 function updateDisplays(cueNum) {
     var current = cueNum || currentCue;
     var nextVisualCue = -1;
+    
+    // Find next visual cue that is not primed
     for (var i = current + 1; i <= cueListLength; i++) {
         if (VISUAL_MEDIA_CUE_TYPES.includes(getType(i))) {
             if (!primed[i]) {
