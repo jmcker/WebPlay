@@ -3,7 +3,7 @@ var activeCues = {};
 var outputs = {};
 var meteredOutput = 1;
 var previewing = null;
-var GLOBAL_FADE_TIME = 4.0;
+var GLOBAL_AUDIO_FADE_TIME = 4.0;
 var globalPanControl = document.getElementById("global_pan_control");
 var globalGainControl = document.getElementById("global_gain_control");
 var globalPanDisplay = document.getElementById("global_pan_display");
@@ -231,7 +231,7 @@ class AudioCue {
     }
     
     fade(length) {
-        length = length || GLOBAL_FADE_TIME;
+        length = length || GLOBAL_AUDIO_FADE_TIME;
         length = parseFloat(length);
         
         console.log("Manual fade started at: " + this.context.currentTime +
@@ -737,6 +737,7 @@ class ControlCue {
 				} else {
 					onscreenAlert("Cue #" + this.targetId + " is not playing.");
 					this.stop();
+                    return;
 				}
 				break;
 			case "cue_fade":
@@ -745,31 +746,52 @@ class ControlCue {
 				} else {
 					onscreenAlert("Cue #" + this.targetId + " is not playing");
 					this.stop();
+                    return;
 				}
 				break;
 			case "cue_pause":
 				if (activeCues[this.targetId]) {
-				    if (getType(this.targetId).includes("audio")) {
+				    if (MEDIA_CUE_TYPES.includes(getType(this.targetId))) {
 					    activeCues[this.targetId].pause();
 				    } else {
 				        onscreenAlert("Cue #" + this.targetId + " cannot be paused.")
+                        this.stop();
+                        return;
 				    }
 				} else {
 					onscreenAlert("Cue #" + this.targetId + " is not playing.");
 					this.stop();
+                    return;
 				}
 				break;
 			case "cue_resume":
 				if (activeCues[this.targetId]) {
-					activeCues[this.targetId].resume();
+					if (MEDIA_CUE_TYPES.includes(getType(this.targetId)) && activeCues[this.targetId].paused) {
+					    activeCues[this.targetId].resume();
+				    } else {
+				        onscreenAlert("Cue #" + this.targetId + " cannot be resumed.")
+                        this.stop();
+                        return;
+				    }
+				} else {
+				    onscreenAlert("Cue #" + this.targetId + " is not paused.");
+					this.stop();
+                    return;
 				}
 				break;
 			case "vol_change":
 				if (activeCues[this.targetId]) {
-					activeCues[this.targetId].volumeChange(this.volume, this.length);
+                    if (AUDIO_MEDIA_CUE_TYPES.includes(getType(this.targetId))) {
+					    activeCues[this.targetId].volumeChange(this.volume, this.length);
+				    } else {
+				        onscreenAlert("Cue #" + this.targetId + " does not have audio.")
+                        this.stop();
+                        return;
+				    }
 				} else {
 					onscreenAlert("Cue #" + this.targetId + " is not playing.");
 					this.stop();
+                    return;
 				}
 				break;
 			case "pan_change":
@@ -782,6 +804,7 @@ class ControlCue {
 				} else {
 					onscreenAlert("Cue #" + this.targetId + " is not playing.");
 					this.stop();
+                    return;
 				}
 				break;
 			case "pitch_change":
@@ -791,14 +814,22 @@ class ControlCue {
 				} else {
 					onscreenAlert("Cue #" + this.targetId + " is not playing.");
 					this.stop();
+                    return;
 				}
 				break;
 			case "exit_loop":
 				if (activeCues[this.targetId]) {
-					activeCues[this.targetId].currentLoop = activeCues[this.targetId].loops;
+                    if (AUDIO_MEDIA_CUE_TYPES.includes(getType(this.targetId))) {
+					    activeCues[this.targetId].currentLoop = activeCues[this.targetId].loops;
+				    } else {
+				        onscreenAlert("Cue #" + this.targetId + " does not have loops.")
+                        this.stop();
+                        return;
+				    }
 				} else {
 					onscreenAlert("Cue #" + this.targetId + " is not playing.");
 					this.stop();
+                    return;
 				}
 				break;
 			case "set_position":
@@ -822,15 +853,15 @@ class ControlCue {
 				break;
 		}
 		
-		if (this.duration > 0) {
+		// Check advance action
+		if (getAction(this.cueNum) === "SP" || getAction(this.cueNum) === "SA")
+			advance(getTargetId(this.cueNum), getAction(this.cueNum));
+
+        if (this.duration > 0) {
 		    this.startTimer();
 		} else {
 		    this.stop();
 		}
-		
-		// Check advance action
-		if (getAction(this.cueNum) === "SP" || getAction(this.cueNum) === "SA")
-			advance(getTargetId(this.cueNum), getAction(this.cueNum));
     }
     
     stop() {
@@ -841,7 +872,8 @@ class ControlCue {
         setRemaining(this.cueNum, null);
         resetProgressBar(this.cueNum);
         
-        delete activeCues[this.cueNum];
+        console.log(activeCues[this.cueNum])
+        console.log(delete activeCues[this.cueNum]);
         console.log("Removed Cue #" + this.cueNum + " from the currently playing list.");
         console.dir(activeCues);
         checkButtonLock();
@@ -929,7 +961,14 @@ function go(cueNum) {
         return;
     }
 
-    updateDisplays();
+    if (activeCues[cueNum]) {
+        onscreenAlert("Cue #" + cueNum + " is already active.");
+        return;
+    }
+
+    // Update and prime displays if applicable
+    console.log(cueNum);
+    updateDisplays(cueNum);
 
     if (ctype === "memo") {
         advance(cueNum + 1, "SA");
@@ -937,8 +976,8 @@ function go(cueNum) {
     }
     if (ctype === "wait") {
         var wait = new WaitCue(context, cueNum);
-        wait.play();
         activeCues[cueNum] = wait;
+        wait.play();
         return; // Only has E actions
     }
     if (ctype === "audio" || ctype === "blank_audio") {
@@ -946,25 +985,27 @@ function go(cueNum) {
             onscreenAlert("No file found for Cue #" + cueNum + ".");
             return;
         }
-        if (activeCues[cueNum]) {
-            onscreenAlert("Cue #" + cueNum + " is already playing.");
-            return;
-        }
     
         var audio = new AudioCue(context, cueNum);
-        audio.play();
         activeCues[cueNum] = audio;
+        audio.play();
     }
     if (ctype === "control") {
         var control = new ControlCue(context, cueNum);
-        control.play();
         activeCues[cueNum] = control;
+        control.play();
         return; // Handles S, E, and F actions
     }
     if (ctype === "image") {
-        var image = new ImageCue(context, cueNum);
-        image.play();
-        activeCues[cueNum] = image;
+        if (primed[cueNum]) {
+            activeCues[cueNum] = primed[cueNum];
+            primed[cueNum].play();
+            delete primed[cueNum];
+        } else {
+            var image = new ImageCue(context, cueNum);
+            activeCues[cueNum] = image;
+            image.play();
+        }
     }
     
     
@@ -1000,20 +1041,25 @@ function advance(targetId, action) {
     }
 }
 
-function updateDisplays() {
+function updateDisplays(cueNum) {
+    var current = cueNum || currentCue;
     var nextVisualCue = -1;
-    for (var i = currentCue; i <= cueListLength; i++) {
-        if (getType(i) === "image" || getType(i) === "video" || getType(i) === "HTML") {
-            nextVisualCue = i;
-            break;
+    for (var i = current + 1; i <= cueListLength; i++) {
+        if (VISUAL_MEDIA_CUE_TYPES.includes(getType(i))) {
+            if (!primed[i]) {
+                nextVisualCue = i;
+                break;
+            }
         }
     }
 
-    if (nextVisualCue != -1 && currentCue - nextVisualCue <= cuesBeforeBlackout) {
-        var image = new Image(context, nextVisualCue);
-        //image.
-        // Prime display, add to primed list as primed[cueNumber], check primed list before creating new in go()    
+    if (!primed[nextVisualCue] && nextVisualCue != -1 && current - nextVisualCue <= cuesBeforeBlackout) {
+        var image = new ImageCue(context, nextVisualCue);
+        image.init(false); // Prime and load but do not display
+        primed[nextVisualCue] = image;
     }
+
+    return nextVisualCue;
 }
 
 function stop(cueNum) {
@@ -1033,18 +1079,21 @@ function stopAll() {
 }
 
 function fade(cueNum, fadeLength) {
-    fadeLength = fadeLength || GLOBAL_FADE_TIME;
+    if (VISUAL_MEDIA_CUE_TYPES.includes(getType(i))) {
+        fadeLength = fadeLength || GLOBAL_VISUAL_FADE_TIME;
+    } else {
+        fadeLength = fadeLength || GLOBAL_AUDIO_FADE_TIME;
+    }
     cueNum = cueNum || currentCue;
     
-    if (activeCues[cueNum] && getType(cueNum) === "audio") {
-        activeCues[cueNum].fade(); // Uses GLOBAL_FADE_TIME
+    if (activeCues[cueNum] && MEDIA_CUE_TYPES.includes(getType(cueNum))) {
+        activeCues[cueNum].fade();
     }
 }
 
 function fadeAll(fadeLength) {
-    fadeLength = fadeLength || GLOBAL_FADE_TIME;
     for (var key in activeCues) {
-        activeCues[key].fade(fadeLength); // Uses GLOBAL_FADE_TIME
+        activeCues[key].fade(fadeLength); // Pass fadeLength to fade and let it deal with it
     }
 }
 
@@ -1053,6 +1102,5 @@ function fadeAllPrevious(cueNum, fadeLength) {
         if (key < cueNum) {
             activeCues[key].fade(fadeLength);
         }
-        // Unknown order, so don't break out of loop
     }
 }
