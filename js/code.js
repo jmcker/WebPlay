@@ -1,9 +1,14 @@
 // Declare and initialize production data
+// Data is replaced when production config file is opened
 var userConfig = {};
 var prodData = {};
 prodData.cueListContent = "";
-prodData.displayList = [];
 prodData.prodStyle = "";
+prodData.displayList = [];
+prodData.autoOpenDisplay = true;
+prodData.cuesBeforeAutoOpen = 3;
+prodData.autoCloseDisplay = true;
+prodData.cuesBeforeAutoClose = 3;
 
 var currentCue = 0;
 var currentlyEditing = 0;
@@ -204,8 +209,6 @@ function editCue(cueNum) {
     var cancel = document.getElementById("edit_cancel");
     var revert = document.getElementById("edit_revert");
 
-    
-
     etarget.innerHTML = "<option value=\"0\">Next Cue</option>";
     for (i = 1; i <= cueListLength; i++) {
         if (i !== currentlyEditing) {
@@ -230,8 +233,10 @@ function editCue(cueNum) {
         hide("edit_param_table5");
         hide("edit_param_table6");
         hide("edit_preview");
-        enotes.disabled = true;
+
         etitle.innerHTML = "Edit Cue - Memo";
+        enotes.disabled = true;
+        edesc.value = getDesc(cueNum);
         
         
     } else if (ctype === "wait") {
@@ -559,6 +564,10 @@ function editCue(cueNum) {
     }
 
     showEditCueMenu();
+
+    // Focus into notes field so that user can tab through form
+    enotes.focus();
+    enotes.select();
 }
 
 function setEditVol(vol) {
@@ -2753,6 +2762,7 @@ function moveCue(currNum, insertPoint) {
     // Move cue to final position
     cueList.rows[insertPoint].innerHTML = tempCue;
     restoreAllCheckStatus(); // Restore all checkbox statuses from checkStatus div
+    setSavedIndicator(false);
     return true;
 }
 
