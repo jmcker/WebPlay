@@ -3217,8 +3217,25 @@ function moveCue(currNum, insertPoint) {
         onscreenAlert("Cannot move cue. Cue number " + insertPoint + " is greater than cue list length.", 5);
         return false;
     } else if (insertPoint < 1) {
-        onscreenAlert("Cannot move cue. Cue number " + insertPoint + " is invalid. Cue number cannot be less than 1.", 5);
+        onscreenAlert("Cannot move cue. Cue number " + insertPoint + " is invalid.", 5);
         return false;
+    }
+
+    // Disallow moving cues when an active or primed cue lies in the range of the move
+    if (currNum < insertPoint) {
+        for (var i = currNum; i <= insertPoint; i++) {
+            if (activeCues[i] || primed[i]) {
+                onscreenAlert("Cannot move cue. There is an active or primed cue in range.");
+                return false;
+            }
+        }
+    } else {
+        for (var i = currNum; i >= insertPoint; i--) {
+            if (activeCues[i] || primed[i]) {
+                onscreenAlert("Cannot move cue. There is an active or primed cue in range.");
+                return false;
+            }
+        }
     }
 
     var cueList = document.getElementById("cue_list");
