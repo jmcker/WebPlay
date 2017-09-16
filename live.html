@@ -75,12 +75,13 @@
                                     <!-- Individual displays added on creation -->
                                 </ul>
                             </li>
-                            <li><a href="javascript:void(0);" onclick="alert('TODO')">Settings</a></li>
-                            <li><a href="javascript:void(0);">AV Mute</a>
-                                <ul>
-                                    <li><a href="javascript:void(0);" onclick="toggleBodyContent(1)">Toggle AV Mute - Display 1</a></li>
+                            <li><a href="javascript:void(0);">Toggle AV Mute</a>
+                                <ul id="avmuteList">
+                                    <li><a href="javascript:void(0);" onclick="muteAllDisplays()">Mute All Displays</a></li>
+                                    <li><a href="javascript:void(0);" onclick="unmuteAllDisplays()">Unmute All Displays</a></li>
                                 </ul>
                             </li>
+                            <li><a href="javascript:void(0);" onclick="alert('TODO')">Settings</a></li>
                         </ul>
                     </li>
                     <li><a href="javascript:void(0);">File System</a>
