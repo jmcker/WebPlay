@@ -523,7 +523,7 @@ class VideoCue {
                 if (self.currentLoop === self.loops) {
                         
                     // Stop playback and erase the active cue
-                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
+                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
                         
                     // Handle EA and EP actions
                     // Handle FA and FP actions for cues with 0 second fadeouts
@@ -552,7 +552,11 @@ class VideoCue {
                     // Reset pause to prevent compensating for it more than once
                     self.pausePoint = 0;
                         
-                    // Seek to the start position
+                    // Seek to the start position and play again
+                    self.player.oncanplaythrough = function() {
+                        self.player.play();
+                        self.player.canplaythrough = function() {};
+                    }
                     self.player.currentTime = self.startPos;
                         
                     // Fade in the next iteration
@@ -629,20 +633,25 @@ function addDisplayHTMLEntries(id) {
     var remove = document.getElementById("removeList");
     var launch = document.getElementById("launchList");
     var close = document.getElementById("closeList");
+    var avmute = document.getElementById("avmuteList");
     var rli = document.createElement("li");
     var lli = document.createElement("li");
     var cli = document.createElement("li");
+    var avli = document.createElement("li");
 
     rli.id = "rli" + id;
     lli.id = "lli" + id;
     cli.id = "cli" + id;
+    avli.id = "avli" + id;
     rli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"removeDisplay(" + id + ")\">Display " + id + "</a>";
     lli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"launchDisplay(" + id + ")\">Display " + id + "</a>";
     cli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"closeDisplay(" + id + ")\">Display " + id + "</a>";
+    avli.innerHTML = "<a href=\"javascript:void(0);\" onclick=\"toggleAvMute(" + id + ")\">Display " + id + "</a>";
 
     remove.appendChild(rli);
     launch.appendChild(lli);
     close.appendChild(cli);
+    avmute.appendChild(avli);
 
     console.log("Added Display #" + id + ".");
 }
@@ -651,11 +660,12 @@ function clearDisplayHTMLEntries() {
     var remove = document.getElementById("removeList");
     var launch = document.getElementById("launchList");
     var close = document.getElementById("closeList");
+    var avmute = document.getElementById("avmuteList");
     var elems = remove.getElementsByTagName("li");
 
     var len = elems.length;
 
-    // Remove each li but the first (first is all)
+    // Remove each li but the first (first is usually "All Displays")
     for (var i = 1; i < len; i++) {
         elems[1].parentNode.removeChild(elems[1]);
     }
@@ -669,21 +679,27 @@ function clearDisplayHTMLEntries() {
     for (var i = 1; i < len; i++) {
         elems[1].parentNode.removeChild(elems[1]);
     }
+
+    // Leave first 2 entries: 0 is mute all, 1 is unmute all
+    elems = avmute.getElementsByTagName("li");
+    for (var i = 2; i < len; i++) {
+        elems[1].parentNode.removeChild(elems[1]);
+    }
 }
 
 function removeDisplay(id) {
 
     closeDisplay(id);
 
-    var launch = document.getElementById("launchList");
-    var close = document.getElementById("closeList");
     var lli = document.getElementById("lli" + id);
     var cli = document.getElementById("cli" + id);
     var rli = document.getElementById("rli" + id);
+    var avli = document.getElementById("avli" + id);
 
     lli.parentNode.removeChild(lli);
     cli.parentNode.removeChild(cli);
     rli.parentNode.removeChild(rli);
+    avli.parentNode.removeChild(avli);
 
     console.log(prodData.displayList.indexOf(id));
     prodData.displayList.splice(prodData.displayList.indexOf(id), 1); // Remove from display list
@@ -831,13 +847,35 @@ function hideBodyContent(id) {
 }
 
 // AV mute function
-function toggleBodyContent(id) {
+function toggleAvMute(id) {
     if (!displays[id] || displays[id].window.closed) {
         onscreenAlert("Display #" + id + " is not active.");
         return;
     }
 
     displays[id].iframe.contentWindow.document.body.classList.toggle("active");
+}
+
+function muteAllDisplays() {
+    for (var id = 1; id <= prodData.displayList.length; id++) {
+        if (!displays[id] || displays[id].window.closed) {
+            onscreenAlert("Display #" + id + " is not active.");
+            return;
+        }
+
+        displays[id].iframe.contentWindow.document.body.classList.remove("active");
+    }
+}
+
+function unmuteAllDisplays() {
+    for (var id = 1; id <= prodData.displayList.length; id++) {
+        if (!displays[id] || displays[id].window.closed) {
+            onscreenAlert("Display #" + id + " is not active.");
+            return;
+        }
+
+        displays[id].iframe.contentWindow.document.body.classList.add("active");
+    }
 }
 
 // Sets the opacity of the element specified by elemId to 1
