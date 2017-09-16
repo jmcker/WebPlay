@@ -288,18 +288,27 @@
                                 <br>
                             </div>
                         </td>
-                        <td id="edit_param_table3_image_controls" class="visible">
+                        <td id="edit_param_table3_image_controls" class="hidden">
                             <div class="edit-left-box">
                                 Duration:<br>
                                 <input type="radio" id="durationUnitTime" name="durationUnit" value="time">Time
                                 <input type="radio" id="durationUnitCue" name="durationUnit" value="cue">Cue
                             </div>
                         </td>
+                        <td id="edit_param_table3_video_controls" class="hidden">
+                            <div class="edit-left-box">
+                                <!-- TODO -- streamed video toggle -->
+                            </div>
+                        </td>
                         <td>
                             <div class="edit-fade-loop-position-outer-box">
-                                <select id="edit_output" class="edit-output">
+                                <select id="edit_output" class="edit-output-display visible">
                                     <option value="1">Output 1</option>
                                     <!-- Generated list of other outputs -->
+                                </select>
+                                <select id="edit_display" class="edit-output-display hidden">
+                                    <option value="1">Display 1</option>
+                                    <!-- Generated list of other displays -->
                                 </select>
                                 <fieldset id="edit_fade_pos_loop_fieldset">
                                     <div class="edit-fade-loop-box">
