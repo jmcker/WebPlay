@@ -316,10 +316,10 @@ class VideoCue {
         }
 
         // Check if display is primed and if video is loaded
-        if (!this.primed || this.image.classList.contains("loading")) {
+        if (!this.primed || this.player.classList.contains("loading")) {
             this.init(true); // Prime, load, reveal, and play video
         } else {
-            if (this.image.src === "" || !this.image.src) {
+            if (this.player.src === "" || !this.player.src) {
                 onscreenAlert("File " + this.filename + " not found for Display #" + this.display + "."); // Alert main window
                 this.stop();
                 return;
