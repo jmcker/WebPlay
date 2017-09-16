@@ -40,9 +40,9 @@ class ImageCue {
             }
         };
 
+        this.image.id = this.cueNum;
         this.image.className = "elem loading";
         this.image.src = filer.pathToFilesystemURL(this.filename);
-        this.image.id = this.cueNum;
         this.primed = (primeDisplay(this.display, this.image) == null) ? false : true; // Pre-load file
     }
     
@@ -58,7 +58,7 @@ class ImageCue {
     }
 
     play() {
-        console.log("primed: " + this.primed);
+        
         // Check if display is primed and if image is loaded
         if (!this.primed || this.image.classList.contains("loading")) {
             this.init(true); // Prime, load, and reveal image
@@ -222,41 +222,161 @@ class VideoCue {
         this.globalPanNode = globalPanNode;
         this.globalGainNode = globalGainNode;
 
-        this.video = new Video();
+        this.player = new Video();
 
         this.paused = false;
         this.pausePoint = 0;
 
         this.primed = false;
     }
-    
-    init() {
-        // Create media element
-        this.source = this.context.createBufferSource();
+
+    init(reveal) {
+        reveal = reveal || false;
+        this.syncParams();
+
+        this.source = this.context.createMediaElementSource(this.player);
         this.panNode = this.context.createStereoPanner();
         this.gainNode = this.context.createGain();
 
         this.source.connect(this.panNode);
         this.panNode.connect(this.gainNode);
-        this.gainNode.connect(this.globalPanNode);
+        if (this.output <= context.destination.channelCount / 2) {
+            this.gainNode.connect(outputs[this.output]);
+        } else {
+            onscreenAlert("Output #" + this.output + " not available. Patched to Output #1.");
+            this.gainNode.connect(outputs[1]);
+        }
 
         this.panNode.pan.value = this.pan;
         this.gainNode.gain.value = this.gain;
+        if (this.fadeInTime > 0) {
+            this.gainNode.gain.value = 0.001;
+        }
 
-        this.paused = false;
-        this.pausePoint = 0;
+        var self = this;
+        this.player.oncanplaythrough = function() {
+            self.player.style.transition = "opacity " + self.fadeInTime + "s ease-in-out";
+            self.player.classList.remove("loading");
+            self.player.oncanplaythrough = function() {}; // Overwrite the oncanplaythrough handler to prevent firing multiple times when seeking
+
+            if (reveal && self.primed) {
+                revealContent(self.display, self.cueNum);
+                self.player.play();
+                self.startTimer();
+            } else if (!self.primed) {
+                self.stop();
+                return;
+            }
+        };
+
+        this.player.id = this.cueNum;
+        this.player.className = "elem loading";
+        this.player.src = filer.pathToFilesystemURL(this.filename);
+        this.player.currentTime = this.startPos; // Seek to start position + elapsed time before pause
+        this.primed = (primeDisplay(this.display, this.player) == null) ? false : true; // Pre-load file
+    }
+
+    syncParams() {
+        this.pan = getPan(this.cueNum) / 50;
+        this.vol = getVol(this.cueNum);
+        this.gain = dBToGain(getVol(this.cueNum));
+        this.pitch = getPitch(this.cueNum);
+        this.detune = percentageToCents(this.pitch);
+        this.playbackRate = this.pitch / 100;
+        this.startPos = getStartPosInSecs(this.cueNum);
+        this.stopPos = getStopPosInSecs(this.cueNum);
+        this.filename = getFilename(this.cueNum);
+        this.fileDuration = getFileDurInSecs(this.cueNum);
+        this.cueDuration = this.stopPos - this.startPos;
+        this.fadeInTime = getFadeIn(this.cueNum);
+        this.fadeOutTime = getFadeOut(this.cueNum);
+        this.loops = getLoops(this.cueNum);
+        this.currentLoop = 1;
+        this.display = getOutput(this.cueNum);
+        this.action = getAction(this.cueNum);
+        this.targetId = getTargetId(this.cueNum);
     }
 
     play() {
-        
+
+        // Resume from pause
+        var self = this;
+        if (this.paused) {
+            this.paused = false; // Reset paused flag
+            this.player.currentTime = this.startPos + this.pausePoint; // Seek to start position + elapsed time before pause
+
+            this.player.oncanplaythrough = function() {
+                // Start the HTML player
+                self.player.play();
+                self.player.oncanplaythrough = function() {}; // Overwrite the oncanplaythrough handler to prevent firing multiple times when seeking
+            
+                self.startTimer();
+            };
+            return;
+        }
+
+        // Check if display is primed and if video is loaded
+        if (!this.primed || this.image.classList.contains("loading")) {
+            this.init(true); // Prime, load, reveal, and play video
+        } else {
+            if (this.image.src === "" || !this.image.src) {
+                onscreenAlert("File " + this.filename + " not found for Display #" + this.display + "."); // Alert main window
+                this.stop();
+                return;
+            }
+
+            // Player is already loaded and oncanplaythrough has already fired
+            revealContent(this.display, this.cueNum);
+            this.player.play();
+            this.startTimer();
+        }
+
+        // Warn if display is muted
+        if (displays[this.display] && !displays[this.display].iframe.contentWindow.document.body.classList.contains("active")) {
+            onscreenAlert("Warning: Display #" + this.display + " is AV muted.", 5);
+        }
     }
 
     stop() {
+
+        this.player.pause(); // Stop the HTML player
+        clearInterval(this.intervalId); // Stop checking the clock
+
+        this.player.style.transition = ""; // Remove fades
+        hideContent(this.display, this.cueNum);
+        if (this.image.parentNode) {
+            this.image.parentNode.removeChild(this.image); // Remove from display window
+        }
+
+        this.player = null;
+        console.log("Stopped Cue #" + this.cueNum + ".");
+        
+        setElapsed(this.cueNum, null);
+        setRemaining(this.cueNum, null);
+        resetProgressBar(this.cueNum);
+        delete activeCues[this.cueNum];
+        console.log("Removed Cue #" + this.cueNum + " from the currently playing list.");
+        
+        checkButtonLock();
+    }
+
+    pause() {
+        
+    }
+
+    resume() {
         
     }
 
     fade(length) {
-        
+        length = length || GLOBAL_VISUAL_FADE_TIME;
+        if (length < 0)
+            return;
+
+        this.image.style.transition = "opacity " + length + "s ease-in-out";
+        hideContent(this.display, this.cueNum);
+
+        setTimeout(function() { self.stop(); }, length * 1000 + 10); // Padded 10 ms
     }
 
     fadeIn() {
@@ -264,6 +384,14 @@ class VideoCue {
     }
     
     fadeOut() {
+        
+    }
+
+    startTimer() {
+        
+    }
+
+    updateDisplays() {
         
     }
 }
