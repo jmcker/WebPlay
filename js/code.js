@@ -1178,12 +1178,14 @@ function setButtonLock(val) {
     var editremove = document.getElementById("edit_remove");
     var editfieldset = document.getElementById("edit_fade_pos_loop_fieldset");
     var editoutput = document.getElementById("edit_output");
+    var editdisplay = document.getElementById("edit_display");
     
     go.disabled = val;
     editfile.disabled = val;
     editremove.disabled = val;
     editfieldset.disabled = val;
     editoutput.disabled = val;
+    editdisplay.disabled = val;
 }
 
 function setEditButtonLock(val) {
