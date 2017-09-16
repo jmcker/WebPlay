@@ -1083,9 +1083,16 @@ function updateDisplays(cueNum) {
     }
 
     if (!primed[nextVisualCue] && nextVisualCue != -1 && current - nextVisualCue <= cuesBeforeBlackout) {
-        var image = new ImageCue(context, nextVisualCue);
-        image.init(false); // Prime and load but do not display
-        primed[nextVisualCue] = image;
+        if (getType(nextVisualCue) === "image") {
+            var image = new ImageCue(context, nextVisualCue);
+            image.init(false); // Prime and load but do not display
+            primed[nextVisualCue] = image;
+        } else if (getType(nextVisualCue) === "video") {
+            var video = new VideoCue(context, nextVisualCue);
+            video.init(false);
+            primed[nextVisualCue] = video;
+        }
+        
     }
 
     return nextVisualCue;
