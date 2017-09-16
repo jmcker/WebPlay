@@ -198,6 +198,7 @@ function editCue(cueNum) {
     var efadeout = document.getElementById("edit_fade_out");
     var eloops = document.getElementById("edit_loops");
     var eoutput = document.getElementById("edit_output");
+    var edisplay = document.getElementById("edit_display");
     var estartmin = document.getElementById("edit_start_pos_min");
     var estartsec = document.getElementById("edit_start_pos_sec");
     var estartms = document.getElementById("edit_start_pos_ms");
@@ -270,10 +271,14 @@ function editCue(cueNum) {
     } else if (ctype === "audio" || ctype === "blank_audio") {
         show("edit_param_table2");
         show("edit_param_table3");
+        show("edit_param_table3_audio_controls");
+        hide("edit_param_table3_image_controls");
         hide("edit_param_table4");
         hide("edit_param_table5");
         hide("edit_param_table6");
         show("edit_preview");
+        show("edit_output");
+        hide("edit_display");
         
         var estartmin = document.getElementById("edit_start_pos_min");
         var estartsec = document.getElementById("edit_start_pos_sec");
@@ -467,10 +472,13 @@ function editCue(cueNum) {
         show("edit_param_table2");
         show("edit_param_table3");
         hide("edit_param_table3_audio_controls");
+        show("edit_param_table3_image_controls");
         hide("edit_param_table4");
         hide("edit_param_table5");
         show("edit_param_table6");
-        show("edit_preview");
+        hide("edit_preview"); // TODO
+        hide("edit_output");
+        show("edit_display");
         eloops.disabled = true;
 
         var estartmin = document.getElementById("edit_start_pos_min");
@@ -484,12 +492,12 @@ function editCue(cueNum) {
 
         efile.setAttribute("accept", "image/*");
 
-        eoutput.innerHTML = "";
+        edisplay.innerHTML = "";
         for (i = 1; i <= prodData.displayList.length; i++) {
             var option = document.createElement("option");
             option.value = i;
             option.textContent = "Display " + i;
-            eoutput.add(option);
+            edisplay.add(option);
         }
 
         etitle.innerHTML = "Edit Cue - " + getDesc(cueNum);
@@ -497,7 +505,7 @@ function editCue(cueNum) {
         edesc.value = getDesc(cueNum);
         efadein.value = getFadeIn(cueNum);
         efadeout.value = getFadeOut(cueNum);
-        eoutput.selectedIndex = getOutput(cueNum) - 1;
+        edisplay.selectedIndex = getDisplay(cueNum) - 1;
         eaction.value = getAction(cueNum);
         etarget.value = getTargetId(cueNum);
         setEditStartPos(getStartPosAsArray(cueNum));
@@ -560,6 +568,112 @@ function editCue(cueNum) {
             show("edit_duration_by_cue");
         }*/
 
+
+    } else if (ctype === "video") {
+        show("edit_param_table2");
+        show("edit_param_table3");
+        show("edit_param_table3_audio_controls");
+        hide("edit_param_table3_image_controls");
+        hide("edit_param_table4");
+        hide("edit_param_table5");
+        hide("edit_param_table6");
+        hide("edit_preview"); // TODO
+        show("edit_output");
+        show("edit_display");
+        
+        var estartmin = document.getElementById("edit_start_pos_min");
+        var estartsec = document.getElementById("edit_start_pos_sec");
+        var estartms = document.getElementById("edit_start_pos_ms");
+        var estopmin = document.getElementById("edit_stop_pos_min");
+        var estopsec = document.getElementById("edit_stop_pos_sec");
+        var estopms = document.getElementById("edit_stop_pos_ms");
+
+        efile.setAttribute("accept", "video/*");
+
+        eoutput.innerHTML = "";
+        for (i = 1; i <= context.destination.channelCount / 2; i++) {
+            var option = document.createElement("option");
+            option.value = i;
+            option.textContent = "Display " + i;
+            option.title = "Channels " + (i * 2 - 1) + "&" + (i * 2);
+            eoutput.add(option);
+        }
+        edisplay.innerHTML = "";
+        for (i = 1; i <= prodData.displayList.length; i++) {
+            var option = document.createElement("option");
+            option.value = i;
+            option.textContent = "Display " + i;
+            edisplay.add(option);
+        }
+
+        etitle.innerHTML = "Edit Cue - " + getDesc(cueNum);
+        enotes.value = getNotes(cueNum);
+        edesc.value = getDesc(cueNum);
+        efadein.value = getFadeIn(cueNum);
+        efadeout.value = getFadeOut(cueNum);
+        eloops.value = getLoops(cueNum);
+        eoutput.selectedIndex = getOutput(cueNum) - 1;
+        edisplay.selectedIndex = getDisplay(cueNum) - 1;
+        eaction.value = getAction(cueNum);
+        etarget.value = getTargetId(cueNum);
+        setEditVol(getVol(cueNum));
+        setEditPan(getPan(cueNum));
+        setEditPitch(getPitch(cueNum));
+        setEditStartPos(getStartPosAsArray(cueNum));
+        setEditStopPos(getStopPosAsArray(cueNum));
+
+        if (hasFile(cueNum)) {
+            efilename.innerHTML = getFilename(cueNum);
+            efilepath.value = filer.pathToFilesystemURL(getFilename(cueNum));
+            setEditFileLength(getFileDurInSecs(cueNum));
+            setEditStartPosMax(getStopPosAsArray(cueNum));
+            setEditStopPosMax(getFileDurAsArray(cueNum));
+            setEditStopPosMin(getStartPosAsArray(cueNum));
+        } else {
+            efilename.innerHTML = "";
+            efilepath.value = "";
+            efile.value = "";
+            setEditFileLength(null);
+            // Max pos already cleared above
+        }
+
+        evol.oninput = function() { setEditVol(evol.value); setLiveCueVol(cueNum, evol.value); };
+        evol.ondblclick = function() { setEditVol(0); setLiveCueVol(cueNum, 0); };
+        epan.oninput = function() { setEditPan(epan.value); setLiveCuePan(cueNum, epan.value); };
+        epan.ondblclick = function() { setEditPan(0); setLiveCuePan(cueNum, 0); };
+        epitch.oninput = function() { setEditPitch(epitch.value); setLiveCuePitch(cueNum, epitch.value); };
+        epitch.ondblclick = function() { setEditPitch(100); setLiveCuePitch(cueNum, 100); };
+        estartmin.oninput = function() { validateNumberInput(this); validateRange("start");};
+        estartmin.onblur = function() { validateNumberInput(this, true); validateRange("start"); };
+        estartsec.oninput = function() { validateNumberInput(this); validateRange("start"); };
+        estartsec.onblur = function() { validateNumberInput(this, true); validateRange("start"); };
+        estartms.oninput = function() { validateNumberInput(this); validateRange("start"); };
+        estartms.onblur = function() { validateNumberInput(this, true); validateRange("start"); };
+        estopmin.oninput = function() { validateNumberInput(this); validateRange("stop"); };
+        estopmin.onblur = function() { validateNumberInput(this, true); validateRange("stop"); };
+        estopsec.oninput = function() { validateNumberInput(this); validateRange("stop"); };
+        estopsec.onblur = function() { validateNumberInput(this, true); validateRange("stop"); };
+        estopms.oninput = function() { validateNumberInput(this); validateRange("stop"); };
+        estopms.onblur = function() { validateNumberInput(this, true); validateRange("stop"); };
+        efile.onchange = function() {
+            var filename = efile.files[0].name;
+            var type = efile.files[0].type;
+            var size = efile.files[0].size;
+            console.log("file name: " + filename);
+            console.log("file MIME: " + type);
+            if (type.indexOf("video") === -1) {
+                onscreenAlert(filename + " is not an audio file. Please try again.");
+                efile.value = "";
+                return;
+            }
+            efilename.innerHTML = filename;
+            efilepath.value = filename;
+            setEditButtonLock(true);
+            syncDataFromMediaElement(cueNum, efile.files[0]); // Updates filelength, stop position, and start position maximum
+            if (!edesc.value || edesc.value === "Video Cue") {
+                edesc.value = filename; // If no description is present, fill the description with the filename
+            }
+        };
 
     }
 
@@ -819,6 +933,7 @@ function saveEditedCue(cueNum) {
     var efadeout = document.getElementById("edit_fade_out");
     var eloops = document.getElementById("edit_loops");
     var eoutput = document.getElementById("edit_output");
+    var edisplay = document.getElementById("edit_display");
     var estartmin = document.getElementById("edit_start_pos_min");
     var estartsec = document.getElementById("edit_start_pos_sec");
     var estartms = document.getElementById("edit_start_pos_ms");
@@ -866,7 +981,7 @@ function saveEditedCue(cueNum) {
             setStopPos(cueNum, 0);
             setFilename(cueNum, "");
         } else {
-            // User did not change file
+            // User did not change file but may have changed times
             setStartPos(cueNum, arrayToSec([estartmin.value, estartsec.value, estartms.value]));
             setStopPos(cueNum, arrayToSec([estopmin.value, estopsec.value, estopms.value]));
             console.log("Updated duration: " + secToTime(getStopPosInSecs(cueNum) - getStartPosInSecs(cueNum)));
@@ -936,9 +1051,49 @@ function saveEditedCue(cueNum) {
         setFadeIn(cueNum, efadein.value);
         setFadeOut(cueNum, efadeout.value);
         setIsTimeBased(cueNum, edurationUnitTime.checked);
-        setDisplay(cueNum, eoutput.selectedIndex + 1);
+        setDisplay(cueNum, edisplay.selectedIndex + 1);
         setAction(cueNum, eaction.value);
         setTarget(cueNum, etarget.value);
+
+
+    } else if (ctype === "video") {
+        setNotes(cueNum, enotes.value);
+        setDesc(cueNum, edesc.value);
+        setVol(cueNum, evol.value);
+        setPan(cueNum, epan.value);
+        setPitch(cueNum, epitch.value);
+        if (efile.files[0]) {
+            // User selected new audio file
+            setFilename(cueNum, efilename.innerHTML);
+            writeFile(efile.files[0].name, efile.files[0]);
+            setStartPos(cueNum, arrayToSec([estartmin.value, estartsec.value, estartms.value]));
+            setStopPos(cueNum, arrayToSec([estopmin.value, estopsec.value, estopms.value]));
+            console.log("Updated duration: " + secToTime(getStopPosInSecs(cueNum) - getStartPosInSecs(cueNum)));
+            setCueDur(cueNum, getStopPosInSecs(cueNum) - getStartPosInSecs(cueNum)); // Duration of cue based on start and stop position
+            setFileDur(cueNum, getEditFileLength()); // Full duration of file
+        } else if (efilename.innerHTML === "") {
+            // User removed file
+            setCueDur(cueNum, null);
+            setFileDur(cueNum, null);
+            setStartPos(cueNum, 0);
+            setStopPos(cueNum, 0);
+            setFilename(cueNum, "");
+        } else {
+            // User did not change file but may have changed times
+            setStartPos(cueNum, arrayToSec([estartmin.value, estartsec.value, estartms.value]));
+            setStopPos(cueNum, arrayToSec([estopmin.value, estopsec.value, estopms.value]));
+            console.log("Updated duration: " + secToTime(getStopPosInSecs(cueNum) - getStartPosInSecs(cueNum)));
+            setCueDur(cueNum, getStopPosInSecs(cueNum) - getStartPosInSecs(cueNum)); // Duration of cue based on start and stop position
+            setFileDur(cueNum, getEditFileLength()); // Full duration of file
+        }
+        setFadeIn(cueNum, efadein.value);
+        setFadeOut(cueNum, efadeout.value);
+        setLoops(cueNum, eloops.value);
+        setOutput(cueNum, eoutput.selectedIndex + 1);
+        setDisplay(cueNum, edisplay.selectedIndex + 1);
+        setAction(cueNum, eaction.value);
+        setTarget(cueNum, etarget.value);
+
 
     }
     
@@ -1328,8 +1483,14 @@ function setOutput(cueNum, outputId) {
     document.getElementById(cueNum + "000130001").innerHTML = "Output " + outputId;
 }
 
+function getDisplay(cueNum) {
+    var str = document.getElementById(cueNum + "000130002").innerHTML;
+    str = str.replace("Dsiaply ", "");
+    return parseInt(str);
+}
+
 function setDisplay(cueNum, displayId) {
-    document.getElementById(cueNum + "000130001").innerHTML = "Display " + displayId;
+    document.getElementById(cueNum + "000130002").innerHTML = "Display " + displayId;
 }
 
 function getAction(cueNum) {
@@ -1473,6 +1634,26 @@ function initializeCue(cueNum) {
         setFadeIn(cueNum, 0);
         setFadeOut(cueNum, 0);
         setIsTimeBased(cueNum, true);
+        setDisplay(cueNum, 1);
+        setAction(cueNum, "SA");
+        setTarget(cueNum, 0);
+
+    } else if (ctype === "video") {
+        setEnabled(cueNum, true);
+        setNotes(cueNum, "");
+        setDesc(cueNum, "Video Cue");
+        setFilename(cueNum, "");
+        setCueDur(cueNum, null);
+        setFileDur(cueNum, null);
+        setStartPos(cueNum, 0);
+        setStopPos(cueNum, 0);
+        setFadeIn(cueNum, 0);
+        setFadeOut(cueNum, 0);
+        setVol(cueNum, 0);
+        setPan(cueNum, 0);
+        setPitch(cueNum, 100);
+        setLoops(cueNum, 1);
+        setOutput(cueNum, 1);
         setDisplay(cueNum, 1);
         setAction(cueNum, "SA");
         setTarget(cueNum, 0);
@@ -2248,8 +2429,13 @@ function createCue(cueType) {
                 case 13:
                     cell.className = "cue image output";
                     
+                    var output = document.createElement("div");
+                    output.id = cellId + "1";
+                    output.classname = "visible";
+                    cell.appendChild(output);
+
                     var display = document.createElement("div");
-                    display.id = cellId + "1";
+                    display.id = cellId + "2";
                     display.classname = "visible";
                     cell.appendChild(display);
                     break;
@@ -2263,6 +2449,198 @@ function createCue(cueType) {
                     break;
                 case 15:
                     cell.className = "cue image target";
+
+                    var display = document.createElement("div");
+                    display.id = cellId + "1";
+                    display.className = "visible";
+                    cell.appendChild(display);
+
+                    var targetId = document.createElement("div");
+                    targetId.id = cellId + "2";
+                    targetId.className = "hidden";
+                    cell.appendChild(targetId);
+                    break;
+                default:
+                    break;
+            }
+        }
+    } else if (cueType === "video") {
+        for (var i = 1; i <= 15; i++) {
+            var cell = cue.insertCell(i - 1);
+            cell.id = cueId + i;
+            var cellId = cell.id + "000";
+            switch (i) {
+                case 1:
+                    cell.className = "cue video en";
+
+                    var ctype = document.createElement("div");
+                    ctype.className = "hidden";
+                    ctype.id = cellId + "1";
+                    ctype.innerHTML = cueType;
+                    cell.appendChild(ctype);
+
+                    var input = document.createElement("input");
+                    input.type = "checkbox";
+                    input.id = cellId + "2";
+                    input.name = "en";
+                    input.checked = true;
+                    input.setAttribute('onchange', 'updateCheckStatus(' + cue.id + ', this.checked)');
+                    cell.appendChild(input);
+                    
+                    var checkStatus = document.createElement("div");
+                    checkStatus.className = "hidden";
+                    checkStatus.id = cellId + "3";
+                    checkStatus.innerHTML = "checked";
+                    cell.appendChild(checkStatus);
+                    
+                    var filename = document.createElement("div");
+                    filename.className = "hidden";
+                    filename.id = cellId + "4";
+                    cell.appendChild(filename);
+                    break;
+                case 2:
+                    cell.className = "cue video q";
+                    cell.innerHTML = cue.id;
+                    break;
+                case 3:
+                    cell.className = "cue video hkey";
+                    break;
+                case 4:
+                    cell.className = "cue video notes";
+
+                    var input = document.createElement("input");
+                    input.type = "text";
+                    input.id = cellId + "1";
+                    input.className = "hidden long";
+                    cell.appendChild(input);
+
+                    var display = document.createElement("div");
+                    display.id = cellId + "2";
+                    display.className = "display long visible";
+                    cell.appendChild(display);
+
+                    cell.setAttribute('onclick', 'edit(' + input.id + ')');
+                    break;
+                case 5:
+                    cell.className = "cue video desc progress";
+                    
+                    var input = document.createElement("input");
+                    input.type = "text";
+                    input.id = cellId + "1";
+                    input.className = "long hidden";
+                    cell.appendChild(input);
+
+                    var display = document.createElement("div");
+                    display.id = cellId + "2";
+                    display.className = "display long visible";
+                    cell.appendChild(display);
+
+                    cell.setAttribute('onclick', 'edit(' + input.id + ')');
+                    break;
+                case 6:
+                    cell.className = "cue video dur";
+
+                    var displaydur = document.createElement("div");
+                    displaydur.id = cellId + "1";
+                    displaydur.className = "visible";
+                    cell.appendChild(displaydur);
+                    
+                    var startPos = document.createElement("div");
+                    startPos.id = cellId + "2";
+                    startPos.className = "hidden";
+                    cell.appendChild(startPos);
+                    
+                    var stopPos = document.createElement("div");
+                    stopPos.id = cellId + "3";
+                    stopPos.className = "hidden";
+                    cell.appendChild(stopPos);
+                    
+                    var fadeIn = document.createElement("div");
+                    fadeIn.id = cellId + "4";
+                    fadeIn.className = "hidden";
+                    cell.appendChild(fadeIn);
+                    
+                    var fadeOut = document.createElement("div");
+                    fadeOut.id = cellId + "5";
+                    fadeOut.className = "hidden";
+                    cell.appendChild(fadeOut);
+                    
+                    var fullfileduration = document.createElement("div");
+                    fullfileduration.id = cellId + "6";
+                    fullfileduration.className = "hidden";
+                    cell.appendChild(fullfileduration);
+                    break;
+                case 7:
+                    cell.className = "cue video elapsed";
+
+                    var display = document.createElement("div");
+                    display.id = cellId + "1";
+                    display.className = "visible";
+                    cell.appendChild(display);
+                    break;
+                case 8:
+                    cell.className = "cue video remaining";
+
+                    var display = document.createElement("div");
+                    display.id = cellId + "1";
+                    display.className = "visible";
+                    cell.appendChild(display);
+                    break;
+                case 9:
+                    cell.className = "cue video vol";
+
+                    var display = document.createElement("div");
+                    display.id = cellId + "1";
+                    display.className = "visible";
+                    cell.appendChild(display);
+                    break;
+                case 10:
+                    cell.className = "cue video pan";
+
+                    var display = document.createElement("div");
+                    display.id = cellId + "1";
+                    display.className = "visible";
+                    cell.appendChild(display);
+                    break;
+                case 11:
+                    cell.className = "cue video pitch";
+
+                    var display = document.createElement("div");
+                    display.id = cellId + "1";
+                    display.className = "visible";
+                    cell.appendChild(display);
+                    break;
+                case 12:
+                    cell.className = "cue video loops";
+
+                    var display = document.createElement("div");
+                    display.id = cellId + "1";
+                    display.className = "visible";
+                    cell.appendChild(display);
+                    break;
+                case 13:
+                    cell.className = "cue video output";
+                    
+                    var display = document.createElement("div");
+                    display.id = cellId + "1";
+                    display.classname = "visible";
+                    cell.appendChild(display);
+
+                    var output = document.createElement("div"); // Audio output
+                    output.id = cellId + "2";
+                    output.classname = "visible";
+                    cell.appendChild(output);
+                    break;
+                case 14:
+                    cell.className = "cue video action";
+
+                    var display = document.createElement("div");
+                    display.id = cellId + "1";
+                    display.className = "visible";
+                    cell.appendChild(display);
+                    break;
+                case 15:
+                    cell.className = "cue video target";
 
                     var display = document.createElement("div");
                     display.id = cellId + "1";
@@ -2679,8 +3057,107 @@ function updateCueNumber(currNum, shift) {
                 case 12:
                     break;
                 case 13:
+                    var output = document.getElementById(oldCellId + "1");
+                    output.id = newCellId + "1";
+                    var display = document.getElementById(oldCellId + "2");
+                    display.id = newCellId + "2";
+                    break;
+                case 14:
                     var display = document.getElementById(oldCellId + "1");
                     display.id = newCellId + "1";
+                    break;
+                case 15:
+                    var display = document.getElementById(oldCellId + "1");
+                    display.id = newCellId + "1";
+                    var targetId = document.getElementById(oldCellId + "2");
+                    targetId.id = newCellId + "2";
+                    break;
+                default:
+                    break;
+            }
+        }
+    } else if (cueType === "video") {
+        for (var i = 1; i <= cue.cells.length; i++) {
+            var cell = cue.cells[i - 1];
+            var oldCellId = cell.id + "000";
+            cell.id = newCueId + i;
+            var newCellId = cell.id + "000";
+            switch (i) {
+                case 1:
+                    var ctype = document.getElementById(oldCellId + "1");
+                    ctype.id = newCellId + "1";
+                    var engaged = document.getElementById(oldCellId + "2");
+                    engaged.id = newCellId + "2";
+                    engaged.setAttribute('onchange', 'updateCheckStatus(' + newCueIdNoZeroes + ', this.checked)');
+                    var checkStatus = document.getElementById(oldCellId + "3");
+                    checkStatus.id = newCellId + "3";
+                    var filename = document.getElementById(oldCellId + "4");
+                    filename.id = newCellId + "4";
+                    break;
+                case 2:
+                    cell.innerHTML = newCueIdNoZeroes;
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    var input = document.getElementById(oldCellId + "1");
+                    input.id = newCellId + "1";
+                    var display = document.getElementById(oldCellId + "2");
+                    display.id = newCellId + "2";
+                    
+                    cell.setAttribute('onclick', 'edit(' + input.id + ')');
+                    break;
+                case 5:
+                    var input = document.getElementById(oldCellId + "1");
+                    input.id = newCellId + "1";
+                    var display = document.getElementById(oldCellId + "2");
+                    display.id = newCellId + "2";
+                    
+                    cell.setAttribute('onclick', 'edit(' + input.id + ')');
+                    break;
+                case 6:
+                    var displaydur = document.getElementById(oldCellId + "1");
+                    displaydur.id = newCellId + "1";
+                    var startPos = document.getElementById(oldCellId + "2");
+                    startPos.id = newCellId + "2";
+                    var stopPos = document.getElementById(oldCellId + "3");
+                    stopPos.id = newCellId + "3";
+                    var fadeIn = document.getElementById(oldCellId + "4");
+                    fadeIn.id = newCellId + "4";
+                    var fadeOut = document.getElementById(oldCellId + "5");
+                    fadeOut.id = newCellId + "5";
+                    var fullfilelength = document.getElementById(oldCellId + "6");
+                    fullfilelength.id = newCellId + "6";
+                    break;
+                case 7:
+                    var display = document.getElementById(oldCellId + "1");
+                    display.id = newCellId + "1";
+                    break;
+                case 8:
+                    var display = document.getElementById(oldCellId + "1");
+                    display.id = newCellId + "1";
+                    break;
+                case 9:
+                    var display = document.getElementById(oldCellId + "1");
+                    display.id = newCellId + "1";
+                    break;
+                case 10:
+                    var display = document.getElementById(oldCellId + "1");
+                    display.id = newCellId + "1";
+                    break;
+                case 11:
+                    var display = document.getElementById(oldCellId + "1");
+                    display.id = newCellId + "1";
+                    break;
+                case 12:
+                    var display = document.getElementById(oldCellId + "1");
+                    display.id = newCellId + "1";
+                    break;
+                case 13:
+                    var output = document.getElementById(oldCellId + "1");
+                    output.id = newCellId + "1";
+                    var display = document.getElementById(oldCellId + "2");
+                    display.id = newCellId + "2";
                     break;
                 case 14:
                     var display = document.getElementById(oldCellId + "1");
