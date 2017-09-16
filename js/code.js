@@ -594,7 +594,7 @@ function editCue(cueNum) {
         for (i = 1; i <= context.destination.channelCount / 2; i++) {
             var option = document.createElement("option");
             option.value = i;
-            option.textContent = "Display " + i;
+            option.textContent = "Output " + i;
             option.title = "Channels " + (i * 2 - 1) + "&" + (i * 2);
             eoutput.add(option);
         }
@@ -1485,7 +1485,7 @@ function setOutput(cueNum, outputId) {
 
 function getDisplay(cueNum) {
     var str = document.getElementById(cueNum + "000130002").innerHTML;
-    str = str.replace("Dsiaply ", "");
+    str = str.replace("Display ", "");
     return parseInt(str);
 }
 
