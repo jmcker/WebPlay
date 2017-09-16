@@ -155,7 +155,7 @@ function keyHandler(event) {
     }
 }
 
-// A completely pointless method because the variables are global, but it simplifies setting them all
+// Global key listener access routine
 function keyListeners(editingField1, editingTitle1, newCueOpen1, editingCue1) {
     editingField = editingField1;
     editingTitle = editingTitle1;
