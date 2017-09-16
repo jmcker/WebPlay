@@ -48,7 +48,7 @@ class ImageCue {
     
     syncParams() {
         this.filename = getFilename(this.cueNum);
-        this.display = getOutput(this.cueNum);
+        this.display = getDisplay(this.cueNum);
         this.fadeInTime = getFadeIn(this.cueNum);
         this.fadeOutTime = getFadeOut(this.cueNum);
         this.duration = getCueDurInSecs(this.cueNum);
@@ -137,11 +137,12 @@ class ImageCue {
         this.image.style.transition = "opacity " + length + "s ease-in-out";
         hideContent(this.display, this.cueNum);
 
+        var self = this;
         setTimeout(function() { self.stop(); }, length * 1000 + 10); // Padded 10 ms
     }
 
     fadeIn(time) {
-        var length = (time) ? time - this.context.currentTime : this.fadeOutTime || GLOBAL_VISUAL_FADE_TIME;
+        var length = (time) ? time - this.context.currentTime : this.fadeInTime || GLOBAL_VISUAL_FADE_TIME;
         
         this.image.style.transition = "opacity " + length + "s ease-in-out";
         revealContent(this.display, this.cueNum);
@@ -219,10 +220,8 @@ class VideoCue {
     constructor(context, cueNum) {
         this.context = context;
         this.cueNum = cueNum;
-        this.globalPanNode = globalPanNode;
-        this.globalGainNode = globalGainNode;
 
-        this.player = new Video();
+        this.player = document.createElement("video");
 
         this.paused = false;
         this.pausePoint = 0;
@@ -292,7 +291,8 @@ class VideoCue {
         this.fadeOutTime = getFadeOut(this.cueNum);
         this.loops = getLoops(this.cueNum);
         this.currentLoop = 1;
-        this.display = getOutput(this.cueNum);
+        this.output = getOutput(this.cueNum);
+        this.display = getDisplay(this.cueNum);
         this.action = getAction(this.cueNum);
         this.targetId = getTargetId(this.cueNum);
     }
@@ -344,8 +344,8 @@ class VideoCue {
 
         this.player.style.transition = ""; // Remove fades
         hideContent(this.display, this.cueNum);
-        if (this.image.parentNode) {
-            this.image.parentNode.removeChild(this.image); // Remove from display window
+        if (this.player.parentNode) {
+            this.player.parentNode.removeChild(this.player); // Remove from display window
         }
 
         this.player = null;
@@ -361,38 +361,218 @@ class VideoCue {
     }
 
     pause() {
+        if (this.paused) {
+            onscreenAlert("Cue #" + this.cueNum + " is already paused.");
+            return;
+        }
         
+        this.player.pause(); // Pause the player
+        this.paused = true;
+        clearInterval(this.intervalId); // Stop updating progress bars and checking the clock
+        this.pausePoint = getElapsed(this.cueNum);
+        this.gainNode.gain.cancelAndHoldAtTime(this.context.currentTime); // Hold current automation if fade is in action. Fade will resume when cue resumes
+        this.panNode.pan.cancelAndHoldAtTime(this.context.currentTime);
+        // TODO: Check if pitch need to be cancelled and held
+        
+        // Add yellow progress bar
+        document.getElementById(this.cueNum + "0005").style.backgroundImage = "url(images/yellow-dot.jpg)";
+        
+        console.log("Paused Cue #" + this.cueNum + " at " + secToTime(getElapsed(this.cueNum)) + ".");
     }
 
     resume() {
+        if (!this.paused) {
+            onscreenAlert("Cannot resume. Cue #" + this.cueNum + " is not paused.");
+            return;
+        }
         
+        // Remove yellow progress bar and allow CSS to take back over
+        document.getElementById(this.cueNum + "0005").style.backgroundImage = "";
+        
+        // Resume playback
+        this.play();
+        
+        console.log("Resumed Cue #" + this.cueNum + " at " + secToTime(getElapsed(this.cueNum)) + ".");
     }
 
     fade(length) {
-        length = length || GLOBAL_VISUAL_FADE_TIME;
-        if (length < 0)
-            return;
+        var vlength = length || GLOBAL_VISUAL_FADE_TIME;
+        var alength = length || GLOBAL_AUDIO_FADE_TIME;
 
-        this.image.style.transition = "opacity " + length + "s ease-in-out";
+        // Wait for longer fade to finish before calling stop()
+        length = (vlength > alength) ? vlength : alength;
+
+        this.player.style.transition = "opacity " + vlength + "s ease-in-out";
         hideContent(this.display, this.cueNum);
+        
+        // Fade to 0.001 because 0 is invalid
+        this.gainNode.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + alength);
+        
+        // Real-time visual on volume fader in edit menu
+        if (currentlyEditing === this.cueNum) {
+            logVolSlide(this.context.currentTime, this.context.currentTime + alength, this.gainNode.gain.value, this.gain, this.vol);
+        }
 
+        var self = this;
         setTimeout(function() { self.stop(); }, length * 1000 + 10); // Padded 10 ms
     }
 
-    fadeIn() {
+    fadeIn(time) {
+        // Visual fade is based on length, not scheduled context time
+        // Calculate length if given a context time or use either the cue fade in time or the global visual fade time
+        var vlength = (time) ? time - this.context.currentTime : this.fadeInTime || GLOBAL_VISUAL_FADE_TIME;
+
+        // Audio fade is based on scheduled context time
+        // Use the time provided or schedule a time at (now + the cue fade in time or the global audio fade time)
+        var atime = (time) ? time : this.context.currentTime + (this.fadeInTime || GLOBAL_AUDIO_FADE_TIME);
         
+        this.player.style.transition = "opacity " + vlength + "s ease-in-out";
+        revealContent(this.display, this.cueNum);
+        
+        this.gainNode.gain.value = 0.001;
+        this.gainNode.gain.exponentialRampToValueAtTime(this.gain, atime);
+        
+        // Real-time visual on volume fader in edit menu
+        if (currentlyEditing === this.cueNum) {
+            logVolSlide(this.context.currentTime, atime, this.gainNode.gain.value, this.gain, this.vol);
+        }
     }
     
-    fadeOut() {
+
+    fadeOut(time) {
+        // Visual fade is based on length, not scheduled context time
+        // Calculate length if given a context time or use either the cue fade out time or the global visual fade time
+        var vlength = (time) ? time - this.context.currentTime : this.fadeOutTime || GLOBAL_VISUAL_FADE_TIME;
         
+        // Audio fade is based on scheduled context time
+        // Use the time provided or schedule a time at (now + the cue fade out time or the global audio fade time)
+        var atime = (time) ? time : this.context.currentTime + (this.fadeOutTime || GLOBAL_AUDIO_FADE_TIME);
+
+        this.player.style.transition = "opacity " + vlength + "s ease-in-out";
+        hideContent(this.display, this.cueNum);
+        
+        this.gainNode.gain.exponentialRampToValueAtTime(0.001, atime);
+        
+        // Real-time visual on volume fader in edit menu
+        if (currentlyEditing === this.cueNum) {
+            logVolSlide(this.context.currentTime, atime, this.gainNode.gain.value, 0.001, this.vol);
+        }
+    }
+
+    volumeChange(targetVoldB, length) {
+        length = parseFloat(length);
+        
+        this.gainNode.gain.exponentialRampToValueAtTime(dBToGain(targetVoldB), this.context.currentTime + length);
+        
+        // Real-time visual on volume fader in edit menu
+        if (currentlyEditing === this.cueNum) {
+            logVolSlide(this.context.currentTime, this.context.currrentTime + length, this.gainNode.gain.value, dBToGain(targetVoldB), targetVoldB);
+        }
+
+        // Volume change to -60 is considered fade out
+        if (targetVoldB === -60) {
+            // Stop playback after the fade out has completed
+            var self = this;
+            setTimeout(function() { self.stop(); }, length * 1000 + 10); // Padded 10 ms
+        }
     }
 
     startTimer() {
-        
+        var self = this;
+        var fading = false;
+        var contextStartLoc = self.context.currentTime;
+        var contextStopLoc = contextStartLoc + self.cueDuration - self.pausePoint; // Compensate for shorter cue length when resuming from pause
+        var contextFadeLoc = contextStartLoc + self.cueDuration - self.fadeOutTime - self.pausePoint;
+            
+        // Fade in if the cue has a fade and the fade has not passed already
+        if (self.fadeInTime > 0 && self.pausePoint < self.fadeInTime)
+            self.fadeIn(contextStartLoc + self.fadeInTime - self.pausePoint); // Scheduled to end at cue start + fade length
+                
+        console.log("Current time: " + self.context.currentTime +
+                    "\nCurrent loop: #" + self.currentLoop + " of " + self.loops +
+                    "\nVideo start position: " + (self.pausePoint ? self.startPos + self.pausePoint + " (from pause)" : self.startPos) +
+                    "\nVideo stop position: " + self.stopPos +
+                    "\nContext stop time: " + contextStopLoc);
+            
+        this.intervalId = setInterval(function() {
+                
+            // Update the playback progress bar (fake a context time in the past when coming from pause so that the bars start in the correct position)
+            self.updateProgressDisplay(contextStartLoc - self.pausePoint);
+               
+            // If the cue has a fade, is not fading, and should be fading, start the fade
+            if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFadeLoc) {
+                    
+                fading = true;
+                    
+                // contextFadeLoc may be negative if the paused point lies somewhere within the bounds of (fadeout start) and (cue end)
+                // Though initial gain when resuming will not be correct, the cue will still fade out and end within the expected duration
+                self.fadeOut(contextFadeLoc + self.fadeOutTime);
+                    
+                // Handle FP and FA actions if they have not already been handled before the cue was paused
+                if (self.action.includes("F") && self.pausePoint < contextFadeLoc) {
+                    if (self.targetId == 0) {
+                        advance (self.cueNum + 1, self.action);
+                    } else {
+                        advance(self.targetId, self.action);
+                    }
+                }
+            }
+    
+            // If the iteration should be over, check to see if the cue should go into another iteration or stop
+            if (self.context.currentTime >= contextStopLoc) {
+                if (self.currentLoop === self.loops) {
+                        
+                    // Stop playback and erase the active cue
+                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
+                        
+                    // Handle EA and EP actions
+                    // Handle FA and FP actions for cues with 0 second fadeouts
+                    if (self.action.includes("E") || (self.fadeOutTime === 0 && self.action.includes("F"))) {
+                        if (self.targetId == 0) {
+                            advance (self.cueNum + 1, self.action);
+                        } else {
+                            advance(self.targetId, self.action);
+                        }
+                    }
+                        
+                    self.stop();
+                } else {
+                        
+                    // Move to next iteration of the loop
+                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
+                        
+                    self.currentLoop++;
+                    resetProgressBar(self.cueNum);
+                        
+                    // Store the new iteration start and stop times (context clock)
+                    contextStartLoc += self.cueDuration - self.pausePoint;
+                    contextStopLoc += self.cueDuration;
+                    contextFadeLoc += self.cueDuration;
+                        
+                    // Reset pause to prevent compensating for it more than once
+                    self.pausePoint = 0;
+                        
+                    // Seek to the start position
+                    self.player.currentTime = self.startPos;
+                        
+                    // Fade in the next iteration
+                    fading = false; // Reset FADEOUT flag
+                    if (self.fadeInTime > 0)
+                        self.fadeIn(self.context.currentTime + self.fadeInTime);
+                }
+            }
+        }, 20);
     }
 
-    updateDisplays() {
+    updateProgressDisplay(contextStart) {
+        var now = this.context.currentTime;
+        var elapsed = (now - contextStart).toFixed(1);
+        var remaining = (this.cueDuration - elapsed).toFixed(1);
+        var percentDone = parseInt(elapsed / this.cueDuration * 100);
         
+        setElapsed(this.cueNum, elapsed);
+        setRemaining(this.cueNum, remaining);
+        updateProgressBar(this.cueNum, percentDone, remaining);
     }
 }
 
