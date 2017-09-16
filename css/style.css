@@ -168,6 +168,10 @@ h2 {
     
 }
 
+.video {
+    
+}
+
 .desc-container {
     position: relative;
 }
@@ -336,7 +340,7 @@ h2 {
     border: 1px solid black;
 }
 
-.edit-output {
+.edit-output-display {
     width: 97%;
     margin: 0px 0px 2px 2px
 }
