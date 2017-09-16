@@ -354,7 +354,7 @@ class AudioCue {
                     "\nAudio stop position: " + self.stopPos +
                     "\nContext stop time: " + contextStopLoc);
             
-        self.intervalId = setInterval(function() {
+        this.intervalId = setInterval(function() {
                 
             // Update the playback progress bar (fake a context time in the past when coming from pause so that the bars start in the correct position)
             self.updateProgressDisplay(contextStartLoc - self.pausePoint);
@@ -383,7 +383,7 @@ class AudioCue {
                 if (self.currentLoop === self.loops) {
                         
                     // Stop playback and erase the active cue
-                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
+                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
                         
                     // Handle EA and EP actions
                     // Handle FA and FP actions for cues with 0 second fadeouts
@@ -399,7 +399,7 @@ class AudioCue {
                 } else {
                         
                     // Move to next iteration of the loop
-                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
+                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
                         
                     self.currentLoop++;
                     resetProgressBar(self.cueNum);
@@ -605,7 +605,7 @@ class Preview {
                     "\nContext stop time: " + contextStopLoc +
                     "\nLoops: " + self.loops);
             
-        self.intervalId = setInterval(function() {
+        this.intervalId = setInterval(function() {
                
             // If the cue has a fade, is not fading, and should be fading, start the fade
             if (!fading && self.fadeOutTime > 0 && self.context.currentTime >= contextFadeLoc) {
@@ -1021,6 +1021,17 @@ function go(cueNum) {
             var image = new ImageCue(context, cueNum);
             activeCues[cueNum] = image;
             image.play();
+        }
+    }
+    if (ctype == "video") {
+        if (primed[cueNum]) {
+            activeCues[cueNum] = primed[cueNum];
+            primed[cueNum].play();
+            delete primed[cueNum];
+        } else {
+            var video = new VideoCue(context, cueNum);
+            activeCues[cueNum] = video;
+            video.play();
         }
     }
     
