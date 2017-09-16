@@ -45,9 +45,10 @@ function keyHandler(event) {
             event.preventDefault();
         }
         
-        // New wait cue - Ctrl-Shift- !W overridden by Chrome!
-        if (event.keyCode == -1 && event.ctrlKey && event.shiftKey) {
-            
+        // New wait cue - Ctrl-Shift-X          !W overridden by Chrome!
+        if (event.keyCode == 88 && event.ctrlKey && event.shiftKey) {
+            createCue("wait");
+            event.preventDefault();
         }
         
         // New memo cue - Ctrl-Shift-M
@@ -56,8 +57,21 @@ function keyHandler(event) {
             event.preventDefault();
         }
         
+        // New control cue - Ctrl-Shift-C
         if (event.keyCode == 67 && event.ctrlKey && event.shiftKey) {
             createCue("control");
+            event.preventDefault();
+        }
+
+        // New image cue - Ctrl-Shift-I
+        if (event.keyCode == 73 && event.ctrlKey && event.shiftKey) {
+            createCue("image");
+            event.preventDefault();
+        }
+
+        // New video cue - Ctrl-Shift-V
+        if (event.keyCode == 86 && event.ctrlKey && event.shiftKey) {
+            createCue("video");
             event.preventDefault();
         }
         
