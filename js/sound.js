@@ -142,28 +142,7 @@ class AudioCue {
     }
 
     init() {
-        this.player = new Audio();
-        this.source = this.context.createMediaElementSource(this.player);
-        this.panNode = this.context.createStereoPanner();
-        this.gainNode = this.context.createGain();
-
-        this.source.connect(this.panNode);
-        this.panNode.connect(this.gainNode);
-        if (this.output <= context.destination.channelCount / 2) {
-            this.gainNode.connect(outputs[this.output]);
-        } else {
-            onscreenAlert("Output #" + this.output + " not available. Patched to Output #1.");
-            this.gainNode.connect(outputs[1]);
-        }
-
-        this.panNode.pan.value = this.pan;
-        this.gainNode.gain.value = this.gain;
-        if (this.fadeInTime > 0) {
-            this.gainNode.gain.value = 0.001;
-        }
-    }
-
-    syncParams() {
+        // Sync all cue parameters
         this.pan = getPan(this.cueNum) / 50;
         this.vol = getVol(this.cueNum);
         this.gain = dBToGain(getVol(this.cueNum));
@@ -182,6 +161,29 @@ class AudioCue {
         this.output = getOutput(this.cueNum);
         this.action = getAction(this.cueNum);
         this.targetId = getTargetId(this.cueNum);
+
+        // Create audio element and nodes
+        this.player = new Audio();
+        this.source = this.context.createMediaElementSource(this.player);
+        this.panNode = this.context.createStereoPanner();
+        this.gainNode = this.context.createGain();
+
+        // Connect audio nodes
+        this.source.connect(this.panNode);
+        this.panNode.connect(this.gainNode);
+        if (this.output <= context.destination.channelCount / 2) {
+            this.gainNode.connect(outputs[this.output]);
+        } else {
+            onscreenAlert("Output #" + this.output + " not available. Patched to Output #1.");
+            this.gainNode.connect(outputs[1]);
+        }
+
+        // Set audio node values
+        this.panNode.pan.value = this.pan;
+        this.gainNode.gain.value = this.gain;
+        if (this.fadeInTime > 0) {
+            this.gainNode.gain.value = 0.001;
+        }
     }
 
     play() {
@@ -192,10 +194,7 @@ class AudioCue {
         }
         
         if (!this.paused) {
-            
-            this.syncParams();
             this.init();
-            
             this.player.src = filer.pathToFilesystemURL(this.filename);
             //this.player.playbackRate = this.playbackRate;
         }
@@ -203,10 +202,12 @@ class AudioCue {
         var self = this;
         this.paused = false; // Reset paused flag
         this.player.currentTime = this.startPos + this.pausePoint; // Seek to start position + elapsed time before pause
+
+        // Start the player once the file has been buffered
         this.player.oncanplaythrough = function() {
             // Start the HTML player
             self.player.play();
-            self.player.oncanplaythrough = function() {}; // Overwrite the oncanplaythrough handler to prevent firing multiple times when seeking
+            self.player.oncanplaythrough = function() {}; // Overwrite the oncanplaythrough handler to prevent firing multiple times when seeking back to loopStart
             
             self.startTimer();
         };
@@ -446,24 +447,7 @@ class Preview {
     }
 
     init() {
-        this.player = new Audio();
-        this.source = this.context.createMediaElementSource(this.player);
-        this.panNode = this.context.createStereoPanner();
-        this.gainNode = this.context.createGain();
-        this.pitch = this.context.create
-
-        this.source.connect(this.panNode);
-        this.panNode.connect(this.gainNode);
-        this.gainNode.connect(outputs[0]);
-
-        this.panNode.pan.value = this.pan;
-        this.gainNode.gain.value = this.gain;
-        if (this.fadeInTime > 0) {
-            this.gainNode.gain.value = 0.001;
-        }
-    }
-
-    syncParams() {
+        // Reference edit menu DOM elements
         var evol = document.getElementById("vol_in");
         var epan = document.getElementById("pan_in");
         var epitch = document.getElementById("pitch_in");
@@ -474,6 +458,7 @@ class Preview {
         var efadeout = document.getElementById("edit_fade_out");
         var eloops = document.getElementById("edit_loops");
         
+        // Sync all cue parameters
         this.vol = parseInt(evol.value);
         this.gain = dBToGain(this.vol);
         this.pan = parseInt(epan.value) / 50;
@@ -490,12 +475,29 @@ class Preview {
         this.fadeOutTime = parseInt(efadeout.value);
         this.loops = parseInt(eloops.value);
         this.currentLoop = 1;
+
+        // Create audio element and nodes
+        this.player = new Audio();
+        this.source = this.context.createMediaElementSource(this.player);
+        this.panNode = this.context.createStereoPanner();
+        this.gainNode = this.context.createGain();
+        this.pitch = this.context.create
+
+        // Connect audio nodes
+        this.source.connect(this.panNode);
+        this.panNode.connect(this.gainNode);
+        this.gainNode.connect(outputs[0]);
+
+        // Set audio node values
+        this.panNode.pan.value = this.pan;
+        this.gainNode.gain.value = this.gain;
+        if (this.fadeInTime > 0) {
+            this.gainNode.gain.value = 0.001;
+        }
     }
 
-    // Scheduled playback and stopping using "time" parameter is no longer possible because of switch from buffered playback source
     play() {
         
-        this.syncParams();
         this.init();
         
 		if (!this.file && this.filename === "") {
@@ -503,7 +505,7 @@ class Preview {
             return;
         }
         
-        // Turn preview button into stop preview button
+        // Create "Stop Preview" button
 		var previewButton = document.getElementById("edit_preview");
 		setButtonLock(true);
         previewButton.innerHTML = "Stop Preview";
@@ -518,20 +520,10 @@ class Preview {
         } else {
             this.player.src = filer.pathToFilesystemURL(this.filename);
         }
-        this.player.currentTime = this.startPos;
+
+        this.player.currentTime = this.startPos; // Seek to start position
         
-        if (this.player.preservesPitch) {
-            this.player.preservesPitch = false;
-            console.log("Preview preserve pitch set to: " + this.player.preservesPitch);
-        } else if (this.player.webkitPreservesPitch) {
-            this.player.webkitPreservesPitch = false;
-            console.log("Preview preserve pitch set to: " + this.player.webkitPreservesPitch);
-        } else if (this.player.mozPreservesPitch) {
-            this.player.mozPreservesPitch = false;
-        }
-        
-        this.player.playbackRate = this.playbackRate;
-        
+        // Start the player once the file has been buffered
         this.player.oncanplaythrough = function() {
             // Start the HTML player
             self.player.play();
@@ -541,7 +533,6 @@ class Preview {
         };
     }
 
-	// Scheduled playback and stopping using "time" parameter is no longer possible because of switch from buffered playback source
     stop() {
         
         this.player.pause(); // Stop the HTML player
@@ -930,7 +921,7 @@ class ControlCue {
 }
 
 
-// Sync data from file to edit menu
+// Sync data from a file to the edit menu
 function syncDataFromMediaElement(cueNum, file) {
     cueNum = cueNum || currentlyEditing;
     
