@@ -3,7 +3,6 @@ var activeCues = {};
 var outputs = {};
 var meteredOutput = 1;
 var previewing = null;
-var GLOBAL_AUDIO_FADE_TIME = 4.0;
 var globalPanControl = document.getElementById("global_pan_control");
 var globalGainControl = document.getElementById("global_gain_control");
 var globalPanDisplay = document.getElementById("global_pan_display");
@@ -232,7 +231,7 @@ class AudioCue {
     }
     
     fade(length) {
-        length = length || GLOBAL_AUDIO_FADE_TIME;
+        length = length || userConfig.GLOBAL_AUDIO_FADE_TIME;
         length = parseFloat(length);
         
         console.log("Manual fade started at: " + this.context.currentTime +
@@ -1073,7 +1072,7 @@ function updateDisplays(cueNum) {
         }
     }
 
-    if (!primed[nextVisualCue] && nextVisualCue != -1 && current - nextVisualCue <= cuesBeforeBlackout) {
+    if (!primed[nextVisualCue] && nextVisualCue != -1 && current - nextVisualCue <= userConfig.CUES_BEFORE_FULLSCREEN) {
         if (getType(nextVisualCue) === "image") {
             var image = new ImageCue(context, nextVisualCue);
             image.init(false); // Prime and load but do not display
@@ -1106,11 +1105,6 @@ function stopAll() {
 }
 
 function fade(cueNum, fadeLength) {
-    if (VISUAL_MEDIA_CUE_TYPES.includes(getType(i))) {
-        fadeLength = fadeLength || GLOBAL_VISUAL_FADE_TIME;
-    } else {
-        fadeLength = fadeLength || GLOBAL_AUDIO_FADE_TIME;
-    }
     cueNum = cueNum || currentCue;
     
     if (activeCues[cueNum] && MEDIA_CUE_TYPES.includes(getType(cueNum))) {
