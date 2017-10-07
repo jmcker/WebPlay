@@ -1,16 +1,19 @@
 var userConfig = {};
+userConfig.PROGRESS_BAR_WARNING_TIME = 5;
+userConfig.GLOBAL_AUDIO_FADE_TIME = 4.0;
+userConfig.GLOBAL_VISUAL_FADE_TIME = 1;
+userConfig.CUES_BEFORE_FULLSCREEN = 3;
+
 var filer = new Filer();
 var fs_cap = 200 * 1024 * 1024;
 var fs_used = 0;
 var fs_free = fs_cap;
 
 var entries = []; // Cache of current working directory's entries.
-var currentProd = 1;
 var plainTextPreview = false;
 refreshFolder();
 
-// If the OS doesn't recognize certain types, let's help it. These (extra) types
-// will be read as plaintext.
+// Additional files to be read as text
 var PREVIEWABLE_FILES = [
     ".as",
     ".txt",
@@ -142,11 +145,13 @@ function loadUserConfig() {
         document.body.appendChild(script); // Loading starts when appended
 
     }, function () {
+        // Write user config file with the default values set at the top of this file
         saveUserConfig();
     });
 }
 
 function saveUserConfig() {
+    console.log(userConfig);
     filer.write("/user_config.js", {data: "var userConfig = " + JSON.stringify(userConfig), type: "application/javascript"}, function(fileEntry, fileWriter) {
         console.log("Updated user configuration file.");
         refreshFolder();
@@ -499,7 +504,7 @@ function readFile(i) {
             } else if (file.type.match(/video.*/)) {
                 var player = document.createElement("video");
                 player.controls = true;
-                player.style.height = "67vh";
+                player.style.height = "60vh";
                 player.src = entry.toURL();
                 
                 filePreview.appendChild(player);
@@ -510,7 +515,7 @@ function readFile(i) {
             } else if (file.type.match(/text.*/) || file.type.match(/application\/pdf/) || file.type === "application/javascript") {
                 var iframe = document.createElement("iframe");
                 iframe.style.width = "98%";
-                iframe.style.height = "63vh";
+                iframe.style.height = "60vh";
                 
                 // Display a full preview of the cue list file
                 if (file.name.includes("_production.js")) {
@@ -539,12 +544,21 @@ function readFile(i) {
                             var textarea = document.createElement("textarea");
                             textarea.style.width = "98%";
                             textarea.style.height = "60vh";
-                            textarea.textContent = JSON.stringify(prodData);
+
+                            // Add JSON content with 4 spaces indentation
+                            textarea.textContent = JSON.stringify(prodData, undefined, 4);
                             filePreview.appendChild(textarea);
                         }
                     }
-                    
+
+                    // Remove old script if it exists
+                    var oldScript = document.getElementById("prodData_script");
+                    if (oldScript) {
+                        oldScript.parentNode.removeChild(oldScript);
+                    }
+
                     // Point script to production file and append
+                    script.id = "prodData_script";
                     script.src = filer.pathToFilesystemURL(entry.name);
                     document.body.appendChild(script);
                 
@@ -565,7 +579,7 @@ function readFile(i) {
                     // TODO: implement fade in
                     img.className = "";
                 }
-                img.style.height = "67vh";
+                img.style.height = "60vh";
                 img.src = entry.toURL();
 
                 filePreview.appendChild(img);
