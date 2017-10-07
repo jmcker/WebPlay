@@ -1,7 +1,10 @@
 // Declare and initialize user data
 // Data is replaced when user config file is opened
 var userConfig = {};
-userConfig.progressBarWarningTime = 5;
+userConfig.PROGRESS_BAR_WARNING_TIME = 5;
+userConfig.GLOBAL_AUDIO_FADE_TIME = 4.0;
+userConfig.GLOBAL_VISUAL_FADE_TIME = 1;
+userConfig.CUES_BEFORE_FULLSCREEN = 3;
 
 // Declare and initialize production data
 // Data is replaced when production config file is opened
@@ -885,11 +888,11 @@ function clearEditTable4Dur() {
 }
 
 function validateNumberInput(self, fillBlank) {
-        self.value = self.value.replace("-", "").replace("+", "");
-        if (fillBlank && self.value == "") {
-            self.value = 0;
-            return;
-        }
+    self.value = self.value.replace("-", "").replace("+", "");
+    if (fillBlank && self.value == "") {
+        self.value = 0;
+        return;
+    }
 }
 
 function validateRange(type) {
@@ -994,7 +997,7 @@ function saveEditedCue(cueNum) {
         }
         setFadeIn(cueNum, efadein.value);
         setFadeOut(cueNum, efadeout.value);
-        setLoops(cueNum, eloops.value);
+        setLoops(cueNum, (eloops.value < -1) ? -1 : eloops.value); // Limit loops to [-1, inf)
         setOutput(cueNum, eoutput.selectedIndex + 1);
         setAction(cueNum, eaction.value);
         setTarget(cueNum, etarget.value);
@@ -1207,7 +1210,7 @@ function setEditButtonLock(val) {
 
 function updateProgressBar(cueNum, percent, remaining) {
     var bar = document.getElementById(cueNum + "0005");
-    if (remaining <= userData.progressBarWarningTime) {
+    if (remaining <= userConfig.PROGRESS_BAR_WARNING_TIME) {
         bar.style.backgroundImage = "url(images/red-dot.jpg)";
         bar.style.backgroundSize = percent + "% 100%";
     } else {
@@ -3228,14 +3231,14 @@ function moveCue(currNum, insertPoint) {
     // Disallow moving cues when an active or primed cue lies in the range of the move
     if (currNum < insertPoint) {
         for (var i = currNum; i <= insertPoint; i++) {
-            if (activeCues && activeCues[i] || primed && primed[i]) {
+            if (typeof activeCues !== "undefined" && activeCues[i] || typeof primed !== "undefined" && primed[i]) {
                 onscreenAlert("Cannot move cue. There is an active or primed cue in range.");
                 return false;
             }
         }
     } else {
         for (var i = currNum; i >= insertPoint; i--) {
-            if (activeCues && activeCues[i] || primed && primed[i]) {
+            if (typeof activeCues !== "undefined" && activeCues[i] || typeof primed !== "undefined" && primed[i]) {
                 onscreenAlert("Cannot move cue. There is an active or primed cue in range.");
                 return false;
             }
