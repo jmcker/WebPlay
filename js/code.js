@@ -1,6 +1,10 @@
+// Declare and initialize user data
+// Data is replaced when user config file is opened
+var userConfig = {};
+userConfig.progressBarWarningTime = 5;
+
 // Declare and initialize production data
 // Data is replaced when production config file is opened
-var userConfig = {};
 var prodData = {};
 prodData.cueListContent = "";
 prodData.prodStyle = "";
@@ -1203,7 +1207,7 @@ function setEditButtonLock(val) {
 
 function updateProgressBar(cueNum, percent, remaining) {
     var bar = document.getElementById(cueNum + "0005");
-    if (remaining <= PROGRESS_BAR_WARNING_TIME) {
+    if (remaining <= userData.progressBarWarningTime) {
         bar.style.backgroundImage = "url(images/red-dot.jpg)";
         bar.style.backgroundSize = percent + "% 100%";
     } else {
@@ -3224,14 +3228,14 @@ function moveCue(currNum, insertPoint) {
     // Disallow moving cues when an active or primed cue lies in the range of the move
     if (currNum < insertPoint) {
         for (var i = currNum; i <= insertPoint; i++) {
-            if (activeCues[i] || primed[i]) {
+            if (activeCues && activeCues[i] || primed && primed[i]) {
                 onscreenAlert("Cannot move cue. There is an active or primed cue in range.");
                 return false;
             }
         }
     } else {
         for (var i = currNum; i >= insertPoint; i--) {
-            if (activeCues[i] || primed[i]) {
+            if (activeCues && activeCues[i] || primed && primed[i]) {
                 onscreenAlert("Cannot move cue. There is an active or primed cue in range.");
                 return false;
             }
