@@ -1,7 +1,5 @@
 var displays = {};
 var primed = {};
-var cuesBeforeBlackout = 3; // TODO: editable in display settings
-var GLOBAL_VISUAL_FADE_TIME = 1;
 
 // Cue type lists
 var MEDIA_CUE_TYPES = ["audio", "blank_audio", "image", "video", "HTML"];
@@ -14,6 +12,7 @@ class ImageCue {
         this.context = context;
         this.cueNum = cueNum;
 
+        this.div = document.createElement("div");
         this.image = new Image();
 
         this.paused = false;
@@ -22,7 +21,10 @@ class ImageCue {
         this.primed = false;
     }
 
-    syncParams() {
+    init(reveal) {
+        reveal = reveal || false;
+
+        // Sync all cue parameters
         this.filename = getFilename(this.cueNum);
         this.display = getDisplay(this.cueNum);
         this.fadeInTime = getFadeIn(this.cueNum);
@@ -31,15 +33,10 @@ class ImageCue {
         this.action = getAction(this.cueNum);
         this.targetId = getTargetId(this.cueNum);
         this.timeBased = getIsTimeBased(this.cueNum);
-    }
-    
-    init(reveal) {
-        reveal = reveal || false;
-        this.syncParams();
 
         var self = this;
         this.image.onload = function() {
-            self.image.style.transition = "opacity " + self.fadeInTime + "s ease-in-out";
+            self.div.style.transition = "opacity " + self.fadeInTime + "s ease-in-out";
             self.image.classList.remove("loading");
 
             if (reveal && self.primed) {
@@ -55,10 +52,15 @@ class ImageCue {
             }
         };
 
-        this.image.id = this.cueNum;
         this.image.className = "elem loading";
         this.image.src = filer.pathToFilesystemURL(this.filename);
-        this.primed = (primeDisplay(this.display, this.image) == null) ? false : true; // Pre-load file
+
+        // Create black div to frame object if aspect ratio match is not perfect
+        // Prevents other active content from being shown underneath
+        this.div.id = this.cueNum;
+        this.div.className = "elem-frame";
+        this.div.appendChild(this.image);
+        this.primed = primeDisplay(this.display, this.div); // Pre-load file
     }
 
     play() {
@@ -73,8 +75,13 @@ class ImageCue {
                 return;
             }
 
-            revealContent(this.display, this.cueNum);
-            this.startTimer();
+            var result = revealContent(this.display, this.cueNum);
+            if (result) {
+                this.startTimer();
+            } else {
+                return;
+            }
+
         }
 
         // Warn if display is muted
@@ -85,10 +92,10 @@ class ImageCue {
 
     stop() {
         clearInterval(this.intervalId);
-        this.image.style.transition = ""; // Remove fades
+        this.div.style.transition = ""; // Remove fades
         hideContent(this.display, this.cueNum);
-        if (this.image.parentNode) {
-            this.image.parentNode.removeChild(this.image); // Remove from display window
+        if (this.div.parentNode) {
+            this.div.parentNode.removeChild(this.div); // Remove from display window
         }
         console.log("Stopped Cue #" + this.cueNum + ".");
 
@@ -134,11 +141,11 @@ class ImageCue {
     }
 
     fade(length) {
-        length = length || GLOBAL_VISUAL_FADE_TIME;
+        length = length || userConfig.GLOBAL_VISUAL_FADE_TIME;
         if (length < 0)
             return;
 
-        this.image.style.transition = "opacity " + length + "s ease-in-out";
+        this.div.style.transition = "opacity " + length + "s ease-in-out";
         hideContent(this.display, this.cueNum);
 
         var self = this;
@@ -146,17 +153,17 @@ class ImageCue {
     }
 
     fadeIn(time) {
-        var length = (time) ? time - this.context.currentTime : this.fadeInTime || GLOBAL_VISUAL_FADE_TIME;
+        var length = (time) ? time - this.context.currentTime : this.fadeInTime || userConfig.GLOBAL_VISUAL_FADE_TIME;
         
-        this.image.style.transition = "opacity " + length + "s ease-in-out";
+        this.div.style.transition = "opacity " + length + "s ease-in-out";
         revealContent(this.display, this.cueNum);
     }
     
 
     fadeOut(time) {
-        var length = (time) ? time - this.context.currentTime : this.fadeOutTime || GLOBAL_VISUAL_FADE_TIME;
+        var length = (time) ? time - this.context.currentTime : this.fadeOutTime || userConfig.GLOBAL_VISUAL_FADE_TIME;
         
-        this.image.style.transition = "opacity " + length + "s ease-in-out";
+        this.div.style.transition = "opacity " + length + "s ease-in-out";
         hideContent(this.display, this.cueNum);
     }
 
@@ -167,6 +174,10 @@ class ImageCue {
         var contextStop = contextStart + this.duration - this.pausePoint;
         var contextFade = contextStop - this.fadeOutTime - this.pausePoint;
         
+        // Fade in if the cue has a fade and the fade has not passed already
+        if (self.fadeInTime > 0)
+            self.fadeIn(contextStart + self.fadeInTime); // Scheduled to end at cue start + fade length
+
         console.log("Image started at: " + contextStart);
         console.log("Image ends at: " + contextStop);
         
@@ -225,6 +236,7 @@ class VideoCue {
         this.context = context;
         this.cueNum = cueNum;
 
+        this.div = document.createElement("div");
         this.player = document.createElement("video");
 
         this.paused = false;
@@ -300,11 +312,16 @@ class VideoCue {
             }
         };
 
-        this.player.id = this.cueNum;
         this.player.className = "elem loading";
         this.player.src = filer.pathToFilesystemURL(this.filename);
+
+        // Create black div to frame object if aspect ratio match is not perfect
+        // Prevents other active content from being shown underneath
+        this.div.id = this.cueNum;
+        this.div.className = "elem-frame";
+        this.div.appendChild(this.player);
         this.player.currentTime = this.startPos; // Seek to start position + elapsed time before pause
-        this.primed = (primeDisplay(this.display, this.player) == null) ? false : true; // Pre-load file
+        this.primed = primeDisplay(this.display, this.div); // Pre-load file
     }
 
     play() {
@@ -339,9 +356,14 @@ class VideoCue {
             }
 
             // Player is already loaded and oncanplaythrough has already fired
-            revealContent(this.display, this.cueNum);
-            this.player.play();
-            this.startTimer();
+            var result = revealContent(this.display, this.cueNum);
+            if (result) {
+                this.player.play();
+                this.startTimer();
+            } else {
+                return;
+            }
+            
         }
 
         // Warn if display is muted
@@ -355,10 +377,10 @@ class VideoCue {
         this.player.pause(); // Stop the HTML player
         clearInterval(this.intervalId); // Stop checking the clock
 
-        this.player.style.transition = ""; // Remove fades
+        this.div.style.transition = ""; // Remove fades
         hideContent(this.display, this.cueNum);
-        if (this.player.parentNode) {
-            this.player.parentNode.removeChild(this.player); // Remove from display window
+        if (this.div.parentNode) {
+            this.div.parentNode.removeChild(this.div); // Remove from display window
         }
 
         this.player = null;
@@ -409,13 +431,13 @@ class VideoCue {
     }
 
     fade(length) {
-        var vlength = length || GLOBAL_VISUAL_FADE_TIME;
-        var alength = length || GLOBAL_AUDIO_FADE_TIME;
+        var vlength = length || userConfig.GLOBAL_VISUAL_FADE_TIME;
+        var alength = length || userConfig.GLOBAL_AUDIO_FADE_TIME;
 
         // Wait for longer fade to finish before calling stop()
         length = (vlength > alength) ? vlength : alength;
 
-        this.player.style.transition = "opacity " + vlength + "s ease-in-out";
+        this.div.style.transition = "opacity " + vlength + "s ease-in-out";
         hideContent(this.display, this.cueNum);
         
         // Fade to 0.001 because 0 is invalid
@@ -433,13 +455,13 @@ class VideoCue {
     fadeIn(time) {
         // Visual fade is based on length, not scheduled context time
         // Calculate length if given a context time or use either the cue fade in time or the global visual fade time
-        var vlength = (time) ? time - this.context.currentTime : this.fadeInTime || GLOBAL_VISUAL_FADE_TIME;
+        var vlength = (time) ? time - this.context.currentTime : this.fadeInTime || userConfig.GLOBAL_VISUAL_FADE_TIME;
 
         // Audio fade is based on scheduled context time
         // Use the time provided or schedule a time at (now + the cue fade in time or the global audio fade time)
-        var atime = (time) ? time : this.context.currentTime + (this.fadeInTime || GLOBAL_AUDIO_FADE_TIME);
+        var atime = (time) ? time : this.context.currentTime + (this.fadeInTime || userConfig.GLOBAL_AUDIO_FADE_TIME);
         
-        this.player.style.transition = "opacity " + vlength + "s ease-in-out";
+        this.div.style.transition = "opacity " + vlength + "s ease-in-out";
         revealContent(this.display, this.cueNum);
         
         this.gainNode.gain.value = 0.001;
@@ -455,13 +477,13 @@ class VideoCue {
     fadeOut(time) {
         // Visual fade is based on length, not scheduled context time
         // Calculate length if given a context time or use either the cue fade out time or the global visual fade time
-        var vlength = (time) ? time - this.context.currentTime : this.fadeOutTime || GLOBAL_VISUAL_FADE_TIME;
+        var vlength = (time) ? time - this.context.currentTime : this.fadeOutTime || userConfig.GLOBAL_VISUAL_FADE_TIME;
         
         // Audio fade is based on scheduled context time
         // Use the time provided or schedule a time at (now + the cue fade out time or the global audio fade time)
-        var atime = (time) ? time : this.context.currentTime + (this.fadeOutTime || GLOBAL_AUDIO_FADE_TIME);
+        var atime = (time) ? time : this.context.currentTime + (this.fadeOutTime || userConfig.GLOBAL_AUDIO_FADE_TIME);
 
-        this.player.style.transition = "opacity " + vlength + "s ease-in-out";
+        this.div.style.transition = "opacity " + vlength + "s ease-in-out";
         hideContent(this.display, this.cueNum);
         
         this.gainNode.gain.exponentialRampToValueAtTime(0.001, atime);
@@ -753,10 +775,10 @@ function launchDisplay(id) {
     var iframe = win.document.createElement("iframe");
     
     // Window instructions, styling, and script
-    var s = (cuesBeforeBlackout > 1 ? "s" : "");
+    var s = (userConfig.CUES_BEFORE_FULLSCREEN > 1 ? "s" : "");
     win.document.write("<p>Drag this window onto <b>Display #" + id + "</b>.</p>");
-    win.document.write("<p>" + cuesBeforeBlackout + " cue" + s + " before the display is needed, the content window below will request fullscreen access. Upon triggering, visual content will appear in the fullscreen window. Content will not display if this window is closed or fullscreen access has not been allowed!</p><br>");
-    if (cuesBeforeBlackout >= 0) {
+    win.document.write("<p>" + userConfig.CUES_BEFORE_FULLSCREEN + " cue" + s + " before the display is needed, the content window below will request fullscreen access. Upon triggering, visual content will appear in the fullscreen window. Content will not display if this window is closed or fullscreen access has not been allowed!</p><br>");
+    if (userConfig.CUES_BEFORE_FULLSCREEN >= 0) {
         win.document.write("<button onclick=\"initiateFullscreen(document.getElementsByTagName('iframe')[0])\">Test fullscreen access</button>");
     } else {
         win.document.write("<button onclick=\"initiateFullscreen(document.getElementsByTagName('iframe')[0])\">Enable fullscreen</button>");
@@ -799,6 +821,7 @@ function closeDisplay(id) {
         console.log("Closed Display #" + id + ".");
 		return true;
     } else {
+        // Let this be silent
         //onscreenInfo("Display #" + id + " is already closed.");
     }
 }
@@ -913,7 +936,7 @@ function revealContent(displayId, elemId) {
     // Fade out all other content
     var elems = displays[displayId].iframe.contentWindow.document.getElementsByClassName("elem");
     for (var i = 0; i < elems.length; i++) {
-        elems[i].classList.remove("active");
+        //elems[i].classList.remove("active");
     }
 
     // Show new content
@@ -926,7 +949,7 @@ function revealContent(displayId, elemId) {
 // Default id for elements is their cue number
 function hideContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
-        // Let this be silent for now
+        // Let this be silent
         //onscreenAlert("Display #" + displayId + " is not active.");
         // Calling cue.stop() would create an infinite loop
         return false;
