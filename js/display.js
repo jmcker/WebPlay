@@ -43,8 +43,12 @@ class ImageCue {
             self.image.classList.remove("loading");
 
             if (reveal && self.primed) {
-                revealContent(self.display, self.cueNum);
-                self.startTimer();
+                var result  = revealContent(self.display, self.cueNum);
+                if (result) {
+                    self.startTimer();
+                } else {
+                    return;
+                }
             } else if (!self.primed) {
                 self.stop();
                 return;
@@ -74,7 +78,7 @@ class ImageCue {
         }
 
         // Warn if display is muted
-        if (displays[this.display] && !displays[this.display].iframe.contentWindow.document.body.classList.contains("active")) {
+        if (displays[this.display] && displays[this.display].iframe.contentWindow && !displays[this.display].iframe.contentWindow.document.body.classList.contains("active")) {
             onscreenAlert("Warning: Display #" + this.display + " is AV muted.", 5);
         }
     }
@@ -282,9 +286,14 @@ class VideoCue {
             self.player.oncanplaythrough = function() {}; // Overwrite the oncanplaythrough handler to prevent firing multiple times when seeking to loopStart
 
             if (reveal && self.primed) {
-                revealContent(self.display, self.cueNum);
-                self.player.play();
-                self.startTimer();
+                var result = revealContent(self.display, self.cueNum);
+                if (result) {
+                    self.player.play();
+                    self.startTimer();
+                } else {
+                    // Reveal errored and the content could not be shown
+                    return;
+                }
             } else if (!self.primed) {
                 self.stop();
                 return;
@@ -306,6 +315,7 @@ class VideoCue {
             this.paused = false; // Reset paused flag
             this.player.currentTime = this.startPos + this.pausePoint; // Seek to start position + elapsed time before pause
 
+            // Start the player after the file has been buffered
             this.player.oncanplaythrough = function() {
                 // Start the HTML player
                 self.player.play();
@@ -313,6 +323,8 @@ class VideoCue {
             
                 self.startTimer();
             };
+
+            // Prevent further processing
             return;
         }
 
@@ -333,7 +345,7 @@ class VideoCue {
         }
 
         // Warn if display is muted
-        if (displays[this.display] && !displays[this.display].iframe.contentWindow.document.body.classList.contains("active")) {
+        if (displays[this.display] && displays[this.display].iframe.contentWindow && !displays[this.display].iframe.contentWindow.document.body.classList.contains("active")) {
             onscreenAlert("Warning: Display #" + this.display + " is AV muted.", 5);
         }
     }
@@ -585,7 +597,7 @@ function addDisplay(id, launch) {
     if (id < 0)
         return;
     
-    console.log(prodData.displayList);
+    console.log("Displays: " + prodData.displayList);
     // Use the next available id if none is provided
     if (!id) { 
         for (var i = 1; i <= prodData.displayList.length + 1; i++) {
@@ -598,7 +610,6 @@ function addDisplay(id, launch) {
     launch = (typeof launch === "undefined") ? true : launch;
     
     // Check if display menu entries already exist
-    console.log("")
     if (document.getElementById("lli" + id)) {
         launchDisplay(id);
         onscreenInfo("Display #" + id + " already exists. Launching...");
@@ -807,7 +818,7 @@ function closeAllDisplays(silent) {
 // Pre load files and open fullscreen display before content needs to be shown
 function primeDisplay(id, content) {
     if (!displays[id] || displays[id].window.closed) {
-        onscreenAlert("Display #" + id + " is not active for Cue #" + content.id + ".");
+        onscreenAlert("Display #" + id + " is not active for Cue #" + content.id + " (primer).");
         return false;
     }
     
@@ -915,8 +926,9 @@ function revealContent(displayId, elemId) {
 // Default id for elements is their cue number
 function hideContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
-        onscreenAlert("Display #" + displayId + " is not active.");
-        activeCues[elemId].stop(); // Stop cue
+        // Let this be silent for now
+        //onscreenAlert("Display #" + displayId + " is not active.");
+        // Calling cue.stop() would create an infinite loop
         return false;
     }
     var elem = displays[displayId].iframe.contentWindow.document.getElementById(elemId);
