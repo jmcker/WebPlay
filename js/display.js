@@ -21,6 +21,17 @@ class ImageCue {
 
         this.primed = false;
     }
+
+    syncParams() {
+        this.filename = getFilename(this.cueNum);
+        this.display = getDisplay(this.cueNum);
+        this.fadeInTime = getFadeIn(this.cueNum);
+        this.fadeOutTime = getFadeOut(this.cueNum);
+        this.duration = getCueDurInSecs(this.cueNum);
+        this.action = getAction(this.cueNum);
+        this.targetId = getTargetId(this.cueNum);
+        this.timeBased = getIsTimeBased(this.cueNum);
+    }
     
     init(reveal) {
         reveal = reveal || false;
@@ -44,17 +55,6 @@ class ImageCue {
         this.image.className = "elem loading";
         this.image.src = filer.pathToFilesystemURL(this.filename);
         this.primed = (primeDisplay(this.display, this.image) == null) ? false : true; // Pre-load file
-    }
-    
-    syncParams() {
-        this.filename = getFilename(this.cueNum);
-        this.display = getDisplay(this.cueNum);
-        this.fadeInTime = getFadeIn(this.cueNum);
-        this.fadeOutTime = getFadeOut(this.cueNum);
-        this.duration = getCueDurInSecs(this.cueNum);
-        this.action = getAction(this.cueNum);
-        this.targetId = getTargetId(this.cueNum);
-        this.timeBased = getIsTimeBased(this.cueNum);
     }
 
     play() {
@@ -231,12 +231,34 @@ class VideoCue {
 
     init(reveal) {
         reveal = reveal || false;
-        this.syncParams();
+        
+        // Sync all cue parameters
+        this.pan = getPan(this.cueNum) / 50;
+        this.vol = getVol(this.cueNum);
+        this.gain = dBToGain(getVol(this.cueNum));
+        this.pitch = getPitch(this.cueNum);
+        this.detune = percentageToCents(this.pitch);
+        this.playbackRate = this.pitch / 100;
+        this.startPos = getStartPosInSecs(this.cueNum);
+        this.stopPos = getStopPosInSecs(this.cueNum);
+        this.filename = getFilename(this.cueNum);
+        this.fileDuration = getFileDurInSecs(this.cueNum);
+        this.cueDuration = this.stopPos - this.startPos;
+        this.fadeInTime = getFadeIn(this.cueNum);
+        this.fadeOutTime = getFadeOut(this.cueNum);
+        this.loops = getLoops(this.cueNum);
+        this.currentLoop = 1;
+        this.output = getOutput(this.cueNum);
+        this.display = getDisplay(this.cueNum);
+        this.action = getAction(this.cueNum);
+        this.targetId = getTargetId(this.cueNum);
 
+        // Create audio nodes
         this.source = this.context.createMediaElementSource(this.player);
         this.panNode = this.context.createStereoPanner();
         this.gainNode = this.context.createGain();
 
+        // Connect audio nodes
         this.source.connect(this.panNode);
         this.panNode.connect(this.gainNode);
         if (this.output <= context.destination.channelCount / 2) {
@@ -246,6 +268,7 @@ class VideoCue {
             this.gainNode.connect(outputs[1]);
         }
 
+        // Set audio node values
         this.panNode.pan.value = this.pan;
         this.gainNode.gain.value = this.gain;
         if (this.fadeInTime > 0) {
@@ -273,28 +296,6 @@ class VideoCue {
         this.player.src = filer.pathToFilesystemURL(this.filename);
         this.player.currentTime = this.startPos; // Seek to start position + elapsed time before pause
         this.primed = (primeDisplay(this.display, this.player) == null) ? false : true; // Pre-load file
-    }
-
-    syncParams() {
-        this.pan = getPan(this.cueNum) / 50;
-        this.vol = getVol(this.cueNum);
-        this.gain = dBToGain(getVol(this.cueNum));
-        this.pitch = getPitch(this.cueNum);
-        this.detune = percentageToCents(this.pitch);
-        this.playbackRate = this.pitch / 100;
-        this.startPos = getStartPosInSecs(this.cueNum);
-        this.stopPos = getStopPosInSecs(this.cueNum);
-        this.filename = getFilename(this.cueNum);
-        this.fileDuration = getFileDurInSecs(this.cueNum);
-        this.cueDuration = this.stopPos - this.startPos;
-        this.fadeInTime = getFadeIn(this.cueNum);
-        this.fadeOutTime = getFadeOut(this.cueNum);
-        this.loops = getLoops(this.cueNum);
-        this.currentLoop = 1;
-        this.output = getOutput(this.cueNum);
-        this.display = getDisplay(this.cueNum);
-        this.action = getAction(this.cueNum);
-        this.targetId = getTargetId(this.cueNum);
     }
 
     play() {
@@ -883,6 +884,7 @@ function unmuteAllDisplays() {
 function revealContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
         onscreenAlert("Display #" + displayId + " is not active.");
+        activeCues[elemId].stop(); // Stop cue
         return;
     }
 
@@ -903,6 +905,7 @@ function revealContent(displayId, elemId) {
 function hideContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
         onscreenAlert("Display #" + displayId + " is not active.");
+        activeCues[elemId].stop(); // Stop cue
         return;
     }
     var elem = displays[displayId].iframe.contentWindow.document.getElementById(elemId);
