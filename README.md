@@ -1,5 +1,5 @@
 # WebPlay
-Web-based show control software modeled after daShare's Multiplay.
+Web-based show control software modeled after da-Share's Multiplay.
 
 ### This project is under active development and is not currently ready for live use. ###
 Version 1 is scheduled for relase by October 13th, 2017.
