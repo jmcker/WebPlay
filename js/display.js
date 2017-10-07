@@ -279,7 +279,7 @@ class VideoCue {
         this.player.oncanplaythrough = function() {
             self.player.style.transition = "opacity " + self.fadeInTime + "s ease-in-out";
             self.player.classList.remove("loading");
-            self.player.oncanplaythrough = function() {}; // Overwrite the oncanplaythrough handler to prevent firing multiple times when seeking
+            self.player.oncanplaythrough = function() {}; // Overwrite the oncanplaythrough handler to prevent firing multiple times when seeking to loopStart
 
             if (reveal && self.primed) {
                 revealContent(self.display, self.cueNum);
@@ -786,6 +786,7 @@ function closeDisplay(id) {
     if (displays[id] && !displays[id].window.closed) {
         displays[id].window.close();
         console.log("Closed Display #" + id + ".");
+		return true;
     } else {
         //onscreenInfo("Display #" + id + " is already closed.");
     }
@@ -793,19 +794,21 @@ function closeDisplay(id) {
 
 function closeAllDisplays(silent) {
     if (!silent && !confirm("Close all displays?"))
-        return;
+        return false;
 
     for (var i = 1; i <= prodData.displayList.length; i++) {
         displays[i].window.removeEventListener('beforeunload', displays[i].bfunloadhandler);
         closeDisplay(i);
     }
+	
+	return true;
 }
 
 // Pre load files and open fullscreen display before content needs to be shown
 function primeDisplay(id, content) {
     if (!displays[id] || displays[id].window.closed) {
         onscreenAlert("Display #" + id + " is not active for Cue #" + content.id + ".");
-        return null;
+        return false;
     }
     
     var iframe = displays[id].iframe; // Local reference to frame
@@ -831,37 +834,43 @@ function initiateFullscreen(iframe) {
 function revealBodyContent(id) {
     if (!displays[id] || displays[id].window.closed) {
         onscreenAlert("Display #" + id + " is not active.");
-        return;
+        return false;
     }
     
     displays[id].window.focus();
     displays[id].iframe.contentWindow.document.body.classList.add("active");
+	
+	return true;
 }
 
 function hideBodyContent(id) {
     if (!displays[id] || displays[id].window.closed) {
         onscreenAlert("Display #" + id + " is not active.");
-        return;
+        return false;
     }
     
     displays[id].iframe.contentWindow.document.body.classList.remove("active");
+	
+	return true;
 }
 
 // AV mute function
 function toggleAvMute(id) {
     if (!displays[id] || displays[id].window.closed) {
         onscreenAlert("Display #" + id + " is not active.");
-        return;
+        return false;
     }
 
     displays[id].iframe.contentWindow.document.body.classList.toggle("active");
+	
+	return true;
 }
 
 function muteAllDisplays() {
     for (var id = 1; id <= prodData.displayList.length; id++) {
         if (!displays[id] || displays[id].window.closed) {
             onscreenAlert("Display #" + id + " is not active.");
-            return;
+            continue;
         }
 
         displays[id].iframe.contentWindow.document.body.classList.remove("active");
@@ -872,7 +881,7 @@ function unmuteAllDisplays() {
     for (var id = 1; id <= prodData.displayList.length; id++) {
         if (!displays[id] || displays[id].window.closed) {
             onscreenAlert("Display #" + id + " is not active.");
-            return;
+			continue;
         }
 
         displays[id].iframe.contentWindow.document.body.classList.add("active");
@@ -885,7 +894,7 @@ function revealContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
         onscreenAlert("Display #" + displayId + " is not active.");
         activeCues[elemId].stop(); // Stop cue
-        return;
+        return false;
     }
 
     displays[displayId].window.focus();
@@ -898,6 +907,8 @@ function revealContent(displayId, elemId) {
 
     // Show new content
     displays[displayId].iframe.contentWindow.document.getElementById(elemId).classList.add("active");
+	
+	return true;
 }
 
 // Sets the opacity of the element specified by elemId to 0
@@ -906,10 +917,12 @@ function hideContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
         onscreenAlert("Display #" + displayId + " is not active.");
         activeCues[elemId].stop(); // Stop cue
-        return;
+        return false;
     }
     var elem = displays[displayId].iframe.contentWindow.document.getElementById(elemId);
     if (elem) {
         elem.classList.remove("active");
     }
+	
+	return true;
 }
