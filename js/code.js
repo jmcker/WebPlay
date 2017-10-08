@@ -25,6 +25,8 @@ var estartmaximum;
 var estopminimum;
 var estopmaximum;
 var isSaved;
+var undoStack = [];
+var redoStack = [];
 
 keyListeners(false, false, false, false);
 openFS();
@@ -152,9 +154,22 @@ function closeTitle(saveChanges) {
         if (text.value == "") {
             return;
         } else {
-            // Rename production directory and update display text
-            renameFile("/" + display.innerHTML, "/", text.value)
-            display.innerHTML = text.value;
+            // Update production file, production directory, display text, and window hash
+            renameFile("/" + display.innerHTML + "/" + display.innerHTML + ".wpjs", ".", text.value + ".wpjs");
+            renameFile("/" + display.innerHTML, "/", text.value, function() {
+                filer.cd("/" + text.value, function() {
+
+                    onscreenInfo("Successfully renamed production \"" + display.innerHTML + "\" to \"" + text.value + "\"");
+
+                    // Wait to change the text values until everything completes successfully
+                    display.innerHTML = text.value;
+                    window.location.hash = text.value;
+                
+                }, function() {
+                    alert("An error occurred while renaming the production. Please manually check or change the name of the production folder and the .wpjs file.");
+                    return;
+                });
+            });
         }
     }
 
@@ -162,17 +177,30 @@ function closeTitle(saveChanges) {
     hide("save_title");
     hide("cancel_title");
     show("display_title");
-    setSavedIndicator(isSaved); // Restore saved indicator value (isSaved is global)
+    if (!isSaved) {
+        show("saved_indicator"); // Restore saved indicator value (isSaved is global)
+    }
     keyListeners(false, false, false, false);
 }
 
 function setSavedIndicator(status) {
+    
     if (status) {
         hide("saved_indicator");
         isSaved = true;
     } else {
         show("saved_indicator");
         isSaved = false;
+
+        console.warn("Stacked");
+        // Handle undo/redo stack every time a change is made
+        redo.length = 0; // Clear redo stack after change is made
+        undoStack.push(getCueListHTML()); // Push cueListContent
+        
+        // Remove the oldest from undo if the max has been surpassed
+        if (undoStack.length > userConfig.MAX_UNDO_LEVEL) {
+            undoStack.shift();
+        }
     }
 }
 
@@ -3307,5 +3335,48 @@ function deleteCue(cueNum, silent) {
         select(cueNum);
         
     console.log("Deleted Cue #" + cueNum + ".");
+    setSavedIndicator(false);
+}
+
+function undo() {
+    if (undoStack.length < 2) {
+        onscreenInfo("Nothing to undo.");
+        return;
+    }
+
+    // Pop current state to redo
+    redoStack.push(undoStack.pop());
+
+    // Replace cue list content with state of current undo level
+    var cueList = document.getElementById("cue_list");
+    cueList.innerHTML = undoStack.pop();
+    
+    // Restore normal things
+    cueListLength = cueList.rows.length - 1; // Subtract 1 for table header
+    select(currentCue); // Preserve selected cue unless out of range
+    restoreAllCheckStatus(); // Restore status of check boxes
+
+    show("saved_indicator");
+    isSaved = false;
+}
+
+function redo() {
+    if (redoStack.length == 0) {
+        onscreenInfo("Nothing to redo.");
+        return;
+    }
+
+    // Push current state to undo stack
+    undoStack.push(getCueListHTML());
+
+    // Replace cue list content with state of current redo level
+    var cueList = document.getElementById("cue_list");
+    cueList.innerHTML = redoStack.pop();
+
+    // Restore normal things
+    cueListLength = cueList.rows.length - 1; // Subtract 1 for table header
+    select(currentCue); // Preserve selected cue unless out of range
+    restoreAllCheckStatus(); // Restore status of check boxes
+
     setSavedIndicator(false);
 }
