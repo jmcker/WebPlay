@@ -383,7 +383,7 @@ class AudioCue {
                 if (self.currentLoop === self.loops) {
                         
                     // Stop playback and erase the active cue
-                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
+                    console.log("Completed loop " + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
                         
                     // Handle EA and EP actions
                     // Handle FA and FP actions for cues with 0 second fadeouts
@@ -399,7 +399,7 @@ class AudioCue {
                 } else {
                         
                     // Move to next iteration of the loop
-                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
+                    console.log("Completed loop " + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
                         
                     self.currentLoop++;
                     resetProgressBar(self.cueNum);
@@ -606,12 +606,12 @@ class Preview {
             // If the iteration should be over, check to see if the cue should go into another iteration or stop
             if (self.context.currentTime >= contextStopLoc) {
                 if (self.currentLoop === self.loops) {
-                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
+                    console.log("Completed loop " + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
                     // Stop playback
                     self.stop();
                 } else {
                     // Move to next iteration of the loop
-                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
+                    console.log("Completed loop " + self.currentLoop + " of " + self.loops + " for preview Cue #" + self.cueNum + ".");
                     self.currentLoop++;
                     contextStartLoc += self.cueDuration;
                     contextStopLoc += self.cueDuration;
@@ -1091,37 +1091,81 @@ function updateDisplays(cueNum) {
 function stop(cueNum) {
     cueNum = cueNum || currentCue;
 
+    // Stop cue if cue is active
     if (activeCues[cueNum]) {
         activeCues[cueNum].stop();
     }
-    // Checked button lock already in cue.stop();
+
+    // Remove primed cue
+    if (primed[cueNum]) {
+        primed[cueNum].stop();
+        delete primed[cueNum];
+    }
+
 }
 
 function stopAll() {
+
+    // Stop all active cues
     for (var key in activeCues) {
         activeCues[key].stop();
     }
-    // Checked button lock already in cue.stop()
+
+    // Clear primed cues
+    for (var key in primed) {
+        primed[key].stop();
+        delete primed[key];
+    }
+
 }
 
 function fade(cueNum, fadeLength) {
     cueNum = cueNum || currentCue;
     
+    // Fade if applicable for cue type
     if (activeCues[cueNum] && MEDIA_CUE_TYPES.includes(getType(cueNum))) {
         activeCues[cueNum].fade();
+    } else {
+        onscreenAlert("Cannot fade cue with type " + getType(cueNum) + ".");
+        return;
     }
+
+    // Remove primed cue
+    if (primed[cueNum]) {
+        primed[cueNum].stop();
+        delete primed[cueNum];
+    }
+
 }
 
 function fadeAll(fadeLength) {
+
+    // Fade all active cues
     for (var key in activeCues) {
         activeCues[key].fade(fadeLength); // Pass fadeLength to fade and let it deal with it
+    }
+
+    // Clear primed cues
+    for (var key in primed) {
+        primed[key].stop();
+        delete primed[key];
     }
 }
 
 function fadeAllPrevious(cueNum, fadeLength) {
+
+    // Fade all previous active cues
     for (var key in activeCues) {
         if (key < cueNum) {
             activeCues[key].fade(fadeLength);
+        }
+    }
+
+    // Clear all previous primed cues
+    for (var key in primed) {
+        if (key < cueNum) {
+            primed[key].stop();
+            delete primed[key];
         }
     }
 }
