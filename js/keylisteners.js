@@ -32,6 +32,18 @@ function keyHandler(event) {
             saveProductionFile();
             event.preventDefault();
         }
+
+        // Undo - Ctrl-Z
+        if (event.keyCode == 90 && event.ctrlKey && !event.shiftKey) {
+            undo();
+            event.preventDefault();
+        }
+
+        //Redo - Ctrl-Y or Ctrl-Shift-Z
+        if (event.keyCode == 89 && event.ctrlKey || event.keyCode == 90 && event.ctrlKey && event.shiftKey) {
+            redo();
+            event.preventDefault();
+        }
             
         /******** Cue ********/
         // New audio cue - Ctrl-Shift-A
@@ -127,7 +139,12 @@ function keyHandler(event) {
             closeAll();
         }
         if (event.keyCode == 83 && event.ctrlKey) {
-            closeAll(); // Calls saveAll()
+            closeAll();
+        }
+        // Edit cue - Ctrl-E
+        if (event.keyCode == 69 && event.ctrlKey) {
+            editCue();
+            event.preventDefault();
         }
     }
     // Listen for control enter when title edit is selected.
@@ -148,7 +165,7 @@ function keyHandler(event) {
             saveEditedCue();
         }
     }
-    // Listen to stop for escape in the edit cue window when previewing.
+    // Listen for escape in the edit cue window when previewing.
     if (editingCue && previewing) {
         if ((event.keyCode == 27))
             previewing.stop();
