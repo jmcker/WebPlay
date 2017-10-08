@@ -841,7 +841,7 @@ function closeAllDisplays(silent) {
 // Pre load files and open fullscreen display before content needs to be shown
 function primeDisplay(id, content) {
     if (!displays[id] || displays[id].window.closed) {
-        onscreenAlert("Display #" + id + " is not active for Cue #" + content.id + " (primer).");
+        onscreenAlert("Display #" + id + " is not active for Cue #" + content.id + ".");
         return false;
     }
     
