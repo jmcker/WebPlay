@@ -41,9 +41,10 @@ select(currentCue);
 function onscreenAlert(text, expiration) {
     expiration = expiration || 3;
     var bar = document.getElementById("alert_bar");
-    bar.innerHTML = text;
+    var str = "<br>" + text;
+    bar.innerHTML += str; // Append message
     setTimeout(function() {
-        bar.innerHTML = "";
+        bar.innerHTML = bar.innerHTML.replace(str, ""); // Replace only this message after expiration
     }, expiration * 1000);
     console.warn(text);
 }
@@ -51,11 +52,12 @@ function onscreenAlert(text, expiration) {
 function onscreenInfo(text, expiration) {
     expiration = expiration || 3;
     var bar = document.getElementById("alert_bar");
-    bar.innerHTML = "<span style=\"color: black;\">" + text + "</span>";
+    var str = "<br><span style=\"color: black;\">" + text + "</span>";
+    bar.innerHTML += str; // Append message
     setTimeout(function() {
-        bar.innerHTML = "";
+        bar.innerHTML = bar.innerHTML.replace(str, ""); // Replace only this message after expiration
     }, expiration * 1000);
-    console.log("Onscreen Text: " + text);
+    console.info(text);
 }
 
 function show(id) {
