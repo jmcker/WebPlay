@@ -1,4 +1,5 @@
 var userConfig = {};
+userConfig.MAX_UNDO_LEVEL = 25;
 userConfig.PROGRESS_BAR_WARNING_TIME = 5;
 userConfig.GLOBAL_AUDIO_FADE_TIME = 4.0;
 userConfig.GLOBAL_VISUAL_FADE_TIME = 1;
