@@ -121,7 +121,7 @@ function deleteProd(i, silent) {
     else
         name = i.name;
     
-    if (!silent && !confirm("Delete production " + name + "? All files included in this production will also be deleted. This action cannot be undone!"))
+    if (!silent && !confirm("Delete production \"" + name + "\"? All files included in this production will also be deleted. This action cannot be undone!"))
         return;
     
     filer.rm(name, function() {
@@ -455,7 +455,7 @@ function removeFile(i, silent) {
     var entry = entries[i];
     console.dir(entries);
 
-    if (!silent && !confirm("Delete " + entry.name + "? Productions that depend on this file will be affected.")) {
+    if (!silent && !confirm("Delete \"" + entry.name + "\"? Productions that depend on this file will be affected.")) {
         return;
     }
 
@@ -512,13 +512,13 @@ function readFile(i) {
                 player.load();
                 player.play();
                 
-            } else if (file.type.match(/text.*/) || file.type.match(/application\/pdf/) || file.type === "application/javascript") {
+            } else if (file.type.match(/text.*/) || file.type.match(/application\/pdf/) || Util.getFileExtension(file.name) === ".wpjs" || file.type === "application/javascript") {
                 var iframe = document.createElement("iframe");
                 iframe.style.width = "98%";
                 iframe.style.height = "60vh";
                 
                 // Display a full preview of the cue list file
-                if (file.name.includes("_production.js")) {
+                if (Util.getFileExtension(file.name) === ".wpjs") {
                     
                     iframe.style.height = "60vh"; // Leave room for the toggle button
                     
