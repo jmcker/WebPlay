@@ -64,7 +64,7 @@ function openFS() {
                         createProd(true, productionName);
                     });
                     
-                // Create a new production if the hash was empty
+                // Create a new production if the window hash was empty
                 } else {
                     createProd(true);
                 }
@@ -165,7 +165,7 @@ function saveUserConfig() {
 function loadProductionFile(revert) {
     revert = revert || false;
     var prodName = getProdName();
-    var prodFilePath = filer.pathToFilesystemURL(prodName + "_production.js");
+    var prodFilePath = filer.pathToFilesystemURL(prodName + ".wpjs");
     
     if (revert && !confirm("Revert production to last saved version? Any unsaved changes will be lost."))
         return;
@@ -209,6 +209,12 @@ function loadProductionFile(revert) {
             // TODO: Figure out hiding and showing UI elements
             
             setSavedIndicator(true);
+
+            // Initialize undo/redo
+            undoStack.length = 0; // Clear undo stack
+            redoStack.length = 0; // Clear redo stack
+            undoStack.push(getCueListHTML()); // Push initial undo level
+
             console.log("Loaded production data.");
             console.groupEnd();
         };
@@ -224,7 +230,7 @@ function loadProductionFile(revert) {
 
 function saveProductionFile() {
     prodData.cueListContent = getCueListHTML();
-    filer.write(getProdName() + "_production.js", {data: "var prodData = " + JSON.stringify(prodData), type: "application/javascript"}, function(fileEntry, fileWriter) {
+    filer.write(getProdName() + ".wpjs", {data: "var prodData = " + JSON.stringify(prodData), type: "application/javascript"}, function(fileEntry, fileWriter) {
         onscreenInfo("Production saved.", 1);
         setSavedIndicator(true);
         
@@ -329,7 +335,7 @@ function writeFile(filename, file) {
 
 function removeFile(name, silent) {
 
-    if (!silent && !confirm("Delete " + name + "?")) {
+    if (!silent && !confirm("Delete \"" + name + "\"?")) {
         return;
     }
 
@@ -387,7 +393,7 @@ function loadFile(name, cueNum) {
     }
 }
 
-function renameFile(currPath, destDir, name) {
+function renameFile(currPath, destDir, name, opt_callback) {
 
     filer.mv(currPath, destDir, name, function(entry) {
         console.log(currPath + ' renamed to ' + entry.name + ".");
@@ -396,6 +402,11 @@ function renameFile(currPath, destDir, name) {
         if (window.opener && window.opener.refreshFolder) {
             window.opener.refreshFolder();
         }
+
+        if (opt_callback) {
+            opt_callback();
+        }
+        
     });
 }
 
