@@ -1,6 +1,7 @@
 // Declare and initialize user data
 // Data is replaced when user config file is opened
 var userConfig = {};
+userConfig.MAX_UNDO_LEVEL = 25;
 userConfig.PROGRESS_BAR_WARNING_TIME = 5;
 userConfig.GLOBAL_AUDIO_FADE_TIME = 4.0;
 userConfig.GLOBAL_VISUAL_FADE_TIME = 1;
@@ -192,9 +193,8 @@ function setSavedIndicator(status) {
         show("saved_indicator");
         isSaved = false;
 
-        console.warn("Stacked");
         // Handle undo/redo stack every time a change is made
-        redo.length = 0; // Clear redo stack after change is made
+        redoStack.length = 0; // Clear redo stack after change is made
         undoStack.push(getCueListHTML()); // Push cueListContent
         
         // Remove the oldest from undo if the max has been surpassed
@@ -210,6 +210,7 @@ function editCue(cueNum) {
     currentlyEditing = cueNum;
     var ctype = getType(cueNum);
 
+    closeAll();
     checkButtonLock(currentlyEditing);
     
     // Stop preview if revert button is clicked
@@ -3343,6 +3344,10 @@ function undo() {
         onscreenInfo("Nothing to undo.");
         return;
     }
+    if (Object.keys(activeCues).length > 0 || Object.keys(primed).length > 0) {
+        onscreenAlert("Cannot undo during active or primed cue.");
+        return;
+    }
 
     // Pop current state to redo
     redoStack.push(undoStack.pop());
@@ -3355,7 +3360,15 @@ function undo() {
     cueListLength = cueList.rows.length - 1; // Subtract 1 for table header
     select(currentCue); // Preserve selected cue unless out of range
     restoreAllCheckStatus(); // Restore status of check boxes
+    // Reset all progress bars (if user saved during playback, inline styling saves the progress bar position)
+    for (var i = 1; i <= cueListLength; i++) {
+        resetProgressBar(i);
+    }
 
+    // Push current state back onto undo stack
+    undoStack.push(getCueListHTML()); 
+
+    // Set saved indicator to false without clearing the redo stack
     show("saved_indicator");
     isSaved = false;
 }
@@ -3365,9 +3378,10 @@ function redo() {
         onscreenInfo("Nothing to redo.");
         return;
     }
-
-    // Push current state to undo stack
-    undoStack.push(getCueListHTML());
+    if (Object.keys(activeCues).length > 0 || Object.keys(primed).length > 0) {
+        onscreenAlert("Cannot undo during active or primed cue.");
+        return;
+    }
 
     // Replace cue list content with state of current redo level
     var cueList = document.getElementById("cue_list");
@@ -3377,6 +3391,15 @@ function redo() {
     cueListLength = cueList.rows.length - 1; // Subtract 1 for table header
     select(currentCue); // Preserve selected cue unless out of range
     restoreAllCheckStatus(); // Restore status of check boxes
+    // Reset all progress bars (if user saved during playback, inline styling saves the progress bar position)
+    for (var i = 1; i <= cueListLength; i++) {
+        resetProgressBar(i);
+    }
 
-    setSavedIndicator(false);
+    // Push current state back onto undo stack
+    undoStack.push(getCueListHTML()); 
+
+    // Set saved indicator to false without clearing the redo stack
+    show("saved_indicator");
+    isSaved = false;
 }
