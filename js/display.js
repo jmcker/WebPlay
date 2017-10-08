@@ -558,7 +558,7 @@ class VideoCue {
                 if (self.currentLoop === self.loops) {
                         
                     // Stop playback and erase the active cue
-                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
+                    console.log("Completed loop " + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
                         
                     // Handle EA and EP actions
                     // Handle FA and FP actions for cues with 0 second fadeouts
@@ -574,7 +574,7 @@ class VideoCue {
                 } else {
                         
                     // Move to next iteration of the loop
-                    console.log("Completed loop #" + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
+                    console.log("Completed loop " + self.currentLoop + " of " + self.loops + " for Cue #" + self.cueNum + ".");
                         
                     self.currentLoop++;
                     resetProgressBar(self.cueNum);
