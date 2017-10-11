@@ -103,6 +103,7 @@ function saveAll() {
     for (var i = 0; i < opened.length; i++) {
         if (opened[i].value !== document.getElementById(parseInt(opened[i].id) + 1).innerHTML) { 
             setSavedIndicator(false); // If the user actually made a change, mark the show as unsaved
+            updateUndoRedoStack();
         } 
         save(opened[i]);
     }
@@ -194,16 +195,20 @@ function setSavedIndicator(status) {
     } else {
         show("saved_indicator");
         isSaved = false;
-
-        // Handle undo/redo stack every time a change is made
-        redoStack.length = 0; // Clear redo stack after change is made
-        undoStack.push(getCueListHTML()); // Push cueListContent
-        
-        // Remove the oldest from undo if the max has been surpassed
-        if (undoStack.length > userConfig.MAX_UNDO_LEVEL) {
-            undoStack.shift();
-        }
     }
+}
+
+// Handle undo/redo stack every time a change is made
+function updateUndoRedoStack() {
+    
+    redoStack.length = 0; // Clear redo stack after change is made
+    undoStack.push(getCueListHTML()); // Push cueListContent
+        
+    // Remove the oldest from undo if the max has been surpassed
+    if (undoStack.length > userConfig.MAX_UNDO_LEVEL) {
+        undoStack.shift();
+    }
+
 }
 
 function editCue(cueNum) {
@@ -1147,6 +1152,7 @@ function saveEditedCue(cueNum) {
     hideEditCueMenu();
     currentlyEditing = 0;
     setSavedIndicator(false);
+    updateUndoRedoStack();
 }
 
 function cancelEditedCue(cueNum) {
@@ -2701,6 +2707,7 @@ function createCue(cueType) {
     moveCue(cueListLength, currentCue + 1); // Move to insertion point
     initializeCue(currentCue + 1);
     setSavedIndicator(false);
+    updateUndoRedoStack();
 
     // Open local file selection dialog
     if (cueType === "audio") {
@@ -3296,7 +3303,8 @@ function moveCue(currNum, insertPoint) {
     // Move cue to final position
     cueList.rows[insertPoint].innerHTML = tempCue;
     restoreAllCheckStatus(); // Restore all checkbox statuses from checkStatus div
-    setSavedIndicator(false);
+    // Do not call setSavedIndicator or updateUndoRedoStack
+    // Function is only called from within other functions which handle the indicator and stacks
     return true;
 }
 
@@ -3304,12 +3312,18 @@ function increaseCueNum(currNum) {
     currNum = currNum || currentCue;
     if (moveCue(currNum, currNum + 1))
         select(currNum + 1);
+
+    setSavedIndicator(false);
+    updateUndoRedoStack();
 }
 
 function decreaseCueNum(currNum) {
     currNum = currNum || currentCue;
     if (moveCue(currNum, currNum - 1))
         select(currNum - 1);
+
+    setSavedIndicator(false);
+    updateUndoRedoStack();
 }
 
 function deleteCue(cueNum, silent) {
@@ -3339,6 +3353,7 @@ function deleteCue(cueNum, silent) {
         
     console.log("Deleted Cue #" + cueNum + ".");
     setSavedIndicator(false);
+    updateUndoRedoStack();
 }
 
 function undo() {
