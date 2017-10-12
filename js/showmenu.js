@@ -159,6 +159,65 @@ function saveUserConfig() {
     }, onError);
 }
 
+function downloadProduction(i) {
+    var entry = entries[i];
+
+    if (!entry.isDirectory) {
+        console.warn("Cannot download. File \"" + entry.name + "\" is not a directory.");
+        return;
+    }
+
+    var prodName = entry.name;
+    var fileCount = 0;
+
+    try {
+        var zip = new JSZip();
+
+        // Get all of the entries in the production folder
+        filer.ls("/" + prodName, function(entries) {
+
+            if (entries.length == 0) {
+                alert("\"" + prodName + "\" is empty.");
+                return;
+            }
+
+            // Loop through each entry
+            for (var i = 0; i < entries.length; i++) {
+
+                // Open the entries filesystem file
+                var name = entries[i].name; // Preserve file name
+                // TODO: Figure out how to do this asynchonously
+                filer.open(name, function(file) {
+
+                    console.log(name);
+                    console.log(file);
+
+                    // Add the file to the zip
+                    // Can directly add because file is a Blob
+                    zip.file(name, file);
+                    fileCount++;
+                    console.log("Zipped " + name + ".");
+
+                    // Track when all files have loaded asynchronously
+                    if (fileCount === entries.length) {
+
+                        // Generate the zip
+                        zip.generateAsync({type: "blob"}).then(function(content) {
+                            // Trigger the download
+                            saveAs(content, prodName + ".zip");
+                            console.log("Downloaded zip");
+                        });
+                    }
+                });
+            }
+        }, onError);
+
+    } catch (e) {
+        onError(e);
+    }
+
+}
+
 
 
 
@@ -216,34 +275,42 @@ function refreshFolder() {
 function constructEntryHTML(entry, i) {
     
     var tr = "<tr id=\"" + i + "\">" //onclick=\"select(" + i + ")\">";
-    var img, name, open, download, show, remove;
+    var img, name, open, rename, download, show, remove;
     
     if (entry.isDirectory) {
         img = "<td><img src=\"images/folder.png\" class=\"icon\" onclick=\"cd(" + i + ")\" alt=\"[folder icon]\"></td>";
         name = "<td class=\"prod-name\"><a href=\"javascript:void(0);\" onclick=\"cd(" + i + ")\">" + entry.name + "</a></td>";
         open = "<td><a href=\"javascript:void(0);\" onclick=\"openProd(" + i + ")\">Launch Show</a></td>";
-        download = "<td>Download (TODO)</td>";
+        rename = "<td><a href=\"javascript:void(0);\" onclick=\"renameEntry(" + i + ")\">Rename</a></td>";
+        download = "<td><a href=\"javascript:void(0);\" onclick=\"downloadProduction(" + i + ")\">Download</a></td>";
         show = "<td></td>";
         remove = "<td><a href=\"javascript:void(0);\" onclick=\"deleteProd(" + i + ")\">Delete</a></td>";
     } else {
         img = "<td><img src=\"images/file.png\" class=\"icon\" onclick=\"readFile(" + i + ")\" alt=\"[file icon]\"></td>";
         name = "<td class=\"prod-name\"><a href=\"javascript:void(0);\" onclick=\"readFile(" + i + ")\">" + entry.name + "</a></td>";
         open = "<td><a href=\"javascript:void(0);\" onclick=\"readFile(" + i + ")\">Preview</a></td>";
+        rename = "<td><a href=\"javascript:void(0);\" onclick=\"renameEntry(" + i + ")\">Rename</a></td>";
         download = "<td><a href=\"" + entry.toURL() + "\" download>Download</a></td>"
         show = "<td></td>";
         remove = "<td><a href=\"javascript:void(0);\" onclick=\"removeFile(" + i + ")\">Delete</a></td>";
+
+        if (Util.getFileExtension(entry.name) === ".wpjs" || entry.name === "user_config.js") {
+            rename = "<td></td>";
+        }
     }
 
-    tr += img + name + open + download + show + remove + "</tr>";
+    tr += img + name + open + rename + download + show + remove + "</tr>";
     
     return tr;
 }
 
 function addEntryToList(entry, opt_idx) {
     var prodList = document.getElementById("production_list");
+    var fmsg = document.getElementById("file_message");
+    fmsg.innerHTML = "";
 
-    // If an index isn't passed, we're creating a dir or adding a file. Append it.
-    if (!opt_idx) {
+    // If no index is provided, append the directory or file
+    if (opt_idx == undefined) {
         entries.push(entry);
     }
 
@@ -265,9 +332,9 @@ function renderEntries(resultEntries) {
         return;
     }
 
-    resultEntries.forEach(function(entry, i) {
-        addEntryToList(entry, i);
-    });
+    for (var i = 0; i < entries.length; i++) {
+        addEntryToList(entries[i], i);
+    }
 }
 
 
@@ -432,23 +499,61 @@ function increaseQuota(increaseAmtMB) {
     }, onError);
 }
 
-function renameFile(currPath, destDir, name) {
+function renameFile(currPath, destDir, name, opt_callback) {
 
     filer.mv(currPath, destDir, name, function(entry) {
         console.log(currPath + ' renamed to ' + entry.name + ".");
+
+        if (opt_callback) {
+            opt_callback();
+        }
         
         refreshFolder();
     });
 }
 
-function renameEntry(i, name) {
+function renameEntry(i) {
+    
+    var entry = entries[i];
+    var name = prompt("Enter a new name: ");
 
-    filer.mv(entries[i].fullPath, ".", name, function(entry) {
-        console.log(entries[i].name + ' renamed to ' + entry.name + ".");
-        entries[i] = entry;
+    if (name == null || name == "") {
+        return;
+    }
 
-        refreshFolder();
+    filer.exists("/" + name, function() {
+        
+        alert("\"" + name + "\" already exists.");
+
+    }, function() {
+        
+        // Check if entry is a folder or a production file
+        // Not including  || Util.getFileExtension(entry.name) === ".wpjs" for now
+        if (entry.isDirectory) {
+
+            // Update production file and production directory
+            renameFile(entry.fullPath, "/" + entry.name, name + ".wpjs", function() {
+
+                // Rename folder after file has been successfully renamed
+                renameFile("/" + entry.name, "/", name);
+
+            });
+            // refreshFolder gets called by renameFile and ensures that HTML entries are properly renamed
+
+        } else {
+
+            // Handle other entries
+            filer.mv(entry.fullPath, ".", name, function(newEntry) {
+                console.log(entry.name + ' renamed to ' + newEntry.name + ".");
+
+                refreshFolder();
+            });
+
+        }
+
     });
+
+    
 }
 
 function removeFile(i, silent) {
@@ -463,16 +568,6 @@ function removeFile(i, silent) {
     filer.rm(entry, function() {
         refreshFolder();
     }, onError);
-}
-
-function copy(el, i) {
-
-    filer.cp(entries[i], el.textContent, function(entry) {
-        console.log(entries[i].name + " renamed to " + entry.name + ".");
-        onscreenInfo(entries[i].name + " renamed to " + entry.name + ".");
-        entries[i] = entry;
-    });
-    
 }
 
 function readFile(i) {
@@ -542,13 +637,13 @@ function readFile(i) {
                             }
                             filePreview.appendChild(iframe);
                         } else {
-                            var textarea = document.createElement("textarea");
-                            textarea.style.width = "98%";
-                            textarea.style.height = "60vh";
 
-                            // Add JSON content with 4 spaces indentation
-                            textarea.textContent = JSON.stringify(prodData, undefined, 4);
-                            filePreview.appendChild(textarea);
+                            iframe.src = entry.toURL();
+                            iframe.onload = function() {
+                                iframe.contentWindow.document.body.style.backgroundColor = "white";
+                            }
+                            filePreview.appendChild(iframe);
+          
                         }
                     }
 
@@ -575,10 +670,9 @@ function readFile(i) {
             } else if (file.type.match(/image.*/)) {
 
                 var img = new Image();
-                img.className = "hidden";
+                img.style = "opacity: 0; transition: opacity .5s ease-in-out;";
                 img.onload = function() {
-                    // TODO: implement fade in
-                    img.className = "";
+                    img.style.opacity = 1;
                 }
                 img.style.height = "60vh";
                 img.src = entry.toURL();
@@ -700,6 +794,7 @@ function addListeners() {
                 addEntryToList(entry);
             });
         }
+        refreshFolder();
     });
 }
 
