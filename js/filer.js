@@ -320,14 +320,6 @@ var Filer = new function() {
                 } else {
                     error = "Problem getting Entry for one or more paths.";
                 }
-                if (srcStr.includes("cue_list_content")) {
-                    error = "Could not find existing production file. Save to create a new file.";
-                    
-                    if (opt_errorHandler)
-                        opt_errorHandler(new Error(error));
-                        
-                    return;
-                }
                 if (opt_errorHandler) {
                     opt_errorHandler(new Error(error));
                 } else {
@@ -633,6 +625,7 @@ var Filer = new function() {
             }
         };
         
+        // J. McKernan 5/25/17 ------- Changes from original copy of filer.js ------- 
         /**
          * Determines whether or not a file or directory exists.
          * 
@@ -645,7 +638,7 @@ var Filer = new function() {
             if (!fs_) {
                 throw new Error(FS_INIT_ERROR_MSG);
             }
-            
+
             if (entryOrPath.isFile || entryOrPath.isDirectory) {
                 successCallback();
             } else {
