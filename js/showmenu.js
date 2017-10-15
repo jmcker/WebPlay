@@ -167,19 +167,18 @@ function downloadProduction(i) {
         return;
     }
 
-    var prodName = entry.name;
-    
     try {
         var zip = new JSZip();
+        zip.productionName = entry.name;
         zip.numberOfAsyncFilesLoaded = 0;
         zip.numberOfExpectedFiles = 0;
 
 
         // Get all of the entries in the production folder
-        filer.ls("/" + prodName, function(entries) {
+        filer.ls("/" + zip.productionName, function(entries) {
 
             if (entries.length == 0) {
-                alert("\"" + prodName + "\" is empty.");
+                alert("\"" + zip.productionName + "\" is empty.");
                 return;
             }
 
@@ -208,6 +207,7 @@ function addToZip(zip, name) {
 
         console.log(name);
         console.log(file);
+        console.log(zip);
 
         // Add the file to the zip
         // Can directly add because file is a Blob
@@ -222,10 +222,12 @@ function addToZip(zip, name) {
             zip.generateAsync({type: "blob"}).then(function(content) {
 
                 // Trigger the download
-                saveAs(content, prodName + ".zip");
+                saveAs(content, zip.productionName + ".zip");
                 console.log("Downloaded zip");
             
             });
+
+            filer.cd("/");
         }
     });
 
@@ -449,7 +451,7 @@ function writeFile(filename, file, opt_rerender) {
         
     filer.exists(filename, function() {
         // File already exists; user needs to confirm overwrite
-        if (!confirm(filename + " already exists. Would you like to overwrite?")) {
+        if (!confirm("\"" + filename + "\" already exists. Would you like to overwrite?")) {
             return;
         }
             
@@ -724,7 +726,6 @@ function togglePreview(visible) {
 }
 
 function onKeydown(e) {
-    var target = e.target;
 
     if (e.keyCode == 27) { // ESC
         togglePreview(false);
@@ -733,42 +734,18 @@ function onKeydown(e) {
         e.stopPropagation();
         return;
     }
+
 }
 
-function onImport(e) {
-    var files = e.target.files;
-    if (files.length) {
-        var count = 0;
-        Util.toArray(files).forEach(function(file, i) {
+function dragAndDropHandler(selector, onDropCallback) {
 
-            var folders = file.webkitRelativePath.split("/");
-            folders = folders.slice(0, folders.length - 1);
-
-            // Add each directory. If it already exists, then a noop.
-            mkdir(folders.join("/"), function(dirEntry) {
-                var path = file.webkitRelativePath;
-
-                ++count;
-
-                // Write each file by it's path. Skipt "/." (which is a directory).
-                if (path.lastIndexOf("/.") != path.length - 2) {
-                    writeFile(path, file, false);
-                    if (count == files.length) {
-                        refreshFolder(); // Rerender view on final file.
-                    }
-                }
-            });
-        });
-    }
-}
-
-function DnDFileController(selector, onDropCallback) {
-    var el_ = document.querySelector(selector);
+    // Get element that should be listened on
+    var el = document.querySelector(selector);
 
     this.dragenter = function(e) {
         e.stopPropagation();
         e.preventDefault();
-        el_.classList.add("dropping");
+        el.classList.add("dropping");
     };
 
     this.dragover = function(e) {
@@ -779,36 +756,66 @@ function DnDFileController(selector, onDropCallback) {
     this.dragleave = function(e) {
         e.stopPropagation();
         e.preventDefault();
-        el_.classList.remove("dropping");
+        el.classList.remove("dropping");
     };
 
     this.drop = function(e) {
         e.stopPropagation();
         e.preventDefault();
 
-        el_.classList.remove("dropping");
+        el.classList.remove("dropping");
 
+        // Callback and handle the files that were dropped
         onDropCallback(e.dataTransfer.files, e);
     };
 
-    el_.addEventListener("dragenter", this.dragenter, false);
-    el_.addEventListener("dragover", this.dragover, false);
-    el_.addEventListener("dragleave", this.dragleave, false);
-    el_.addEventListener("drop", this.drop, false);
+    // Add event listeners
+    el.addEventListener("dragenter", this.dragenter, false);
+    el.addEventListener("dragover", this.dragover, false);
+    el.addEventListener("dragleave", this.dragleave, false);
+    el.addEventListener("drop", this.drop, false);
 }
 
 function addListeners() {
     document.addEventListener("keydown", onKeydown, false);
 
-    var dnd = new DnDFileController("body", function(files, e) {
-        var items = e.dataTransfer.items;
-        for (var i = 0, item; item = items[i]; ++i) {
-            filer.cp(item.webkitGetAsEntry(), filer.cwd, null, function(entry) {
-                addEntryToList(entry);
-            });
-        }
-        refreshFolder();
+    // Handle files dropped onto the file explorer
+    var dragAndDrop = new dragAndDropHandler("body", function(files, e) {
+
+        console.log(files);
+        console.log(files.length);
+        var count = 0;
+        for (var i = 0; i < files.length; i++) {
+            
+            var file = files[i];
+            var folders = file.webkitRelativePath.split("/");
+            folders = folders.slice(0, folders.length - 1);
+
+            // Add each directory. If it already exists, 
+            mkdir(folders.join("/"), function(dirEntry) {
+                var path = file.webkitRelativePath;
+
+                count++;
+
+                console.log(path);
+                console.log(file);
+
+                // Write each file to its path. Skip "/." (which is a directory).
+                if (path.lastIndexOf("/.") != path.length - 2) {
+                    console.log(path);
+                    console.log(file);
+                    writeFile(path, file, false);
+                    if (count == files.length) {
+                        refreshFolder(); // Rerender view on final file.
+                    }
+
+                }
+            }, onError);
+        };
+
     });
+
+
 }
 
 window.addEventListener("DOMContentLoaded", function(e) {
