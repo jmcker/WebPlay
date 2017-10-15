@@ -168,10 +168,12 @@ function downloadProduction(i) {
     }
 
     var prodName = entry.name;
-    var fileCount = 0;
-
+    
     try {
         var zip = new JSZip();
+        zip.numberOfAsyncFilesLoaded = 0;
+        zip.numberOfExpectedFiles = 0;
+
 
         // Get all of the entries in the production folder
         filer.ls("/" + prodName, function(entries) {
@@ -181,40 +183,51 @@ function downloadProduction(i) {
                 return;
             }
 
+            // Store total number of files to be added
+            zip.numberOfExpectedFiles = entries.length;
+
             // Loop through each entry
             for (var i = 0; i < entries.length; i++) {
-
-                // Open the entries filesystem file
-                var name = entries[i].name; // Preserve file name
-                // TODO: Figure out how to do this asynchonously
-                filer.open(name, function(file) {
-
-                    console.log(name);
-                    console.log(file);
-
-                    // Add the file to the zip
-                    // Can directly add because file is a Blob
-                    zip.file(name, file);
-                    fileCount++;
-                    console.log("Zipped " + name + ".");
-
-                    // Track when all files have loaded asynchronously
-                    if (fileCount === entries.length) {
-
-                        // Generate the zip
-                        zip.generateAsync({type: "blob"}).then(function(content) {
-                            // Trigger the download
-                            saveAs(content, prodName + ".zip");
-                            console.log("Downloaded zip");
-                        });
-                    }
-                });
+            
+                // Add each file to the zip
+                // Zip download is started once zip.numberOfAsyncFilesLoaded == zip.numberOfExpectedFiles
+                addToZip(zip, entries[i].name);
+                
             }
         }, onError);
 
     } catch (e) {
         onError(e);
     }
+
+}
+
+function addToZip(zip, name) {
+
+    filer.open(name, function(file) {
+
+        console.log(name);
+        console.log(file);
+
+        // Add the file to the zip
+        // Can directly add because file is a Blob
+        zip.file(name, file);
+        zip.numberOfAsyncFilesLoaded++;
+        console.log("Zipped " + name + ".");
+
+        // Track when all files have loaded asynchronously
+        if (zip.numberOfAsyncFilesLoaded === zip.numberOfExpectedFiles) {
+
+            // Generate the zip
+            zip.generateAsync({type: "blob"}).then(function(content) {
+
+                // Trigger the download
+                saveAs(content, prodName + ".zip");
+                console.log("Downloaded zip");
+            
+            });
+        }
+    });
 
 }
 
