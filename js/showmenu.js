@@ -65,6 +65,11 @@ function uploadFile() {
     fbutt.click();
 }
 
+function uploadProd() {
+    var fbutt = document.getElementById("folder_upload");
+    fbutt.click();
+}
+
 function createProd() {
     var name = "";
     while (name === "") {
@@ -77,21 +82,24 @@ function createProd() {
         }
     }
     
-    filer.mkdir("/" + name, true, function() { 
-        refreshFolder(); 
-        window.open("live.html#" + name, "_blank"); 
+    filer.cd("/", function() {
+        filer.mkdir("/" + name, true, function() { 
+            refreshFolder(); 
+            window.open("live.html#" + name, "_blank"); 
         
-    }, function(e) {
-        if (e.name === "InvalidModificationError" || e.code === FileError.PATH_EXISTS_ERR) {
-            onscreenAlert("\"" + name + "\" already exists.");
-            return;
-        } else if (e.code === FileError.QUOTA_EXCEEDED_ERR) {
-            onscreenAlert("Cound not create production. Requesting more storage space...");
-        } else {
-            onError(e);
-        }
+        }, function(e) {
+            if (e.name === "InvalidModificationError" || e.code === FileError.PATH_EXISTS_ERR) {
+                alert("\"" + name + "\" already exists.");
+                return;
+            } else if (e.code === FileError.QUOTA_EXCEEDED_ERR) {
+                onscreenAlert("Cound not create production. Requesting more storage space...");
+            } else {
+                onError(e);
+            }
 
-    });
+        });
+    })
+    
 }
 
 function openProd(i) {
@@ -392,8 +400,14 @@ function setCwd(path) {
 }
 
 function mkdir(name, opt_callback) {
-    if (!name) 
+    if (!name && name !== "")
         return;
+    if (name === "") {
+        if (opt_callback) {
+            opt_callback(null);
+        }
+        return;
+    }
 
     try {
         if (opt_callback) {
@@ -514,19 +528,6 @@ function increaseQuota(increaseAmtMB) {
     }, onError);
 }
 
-function renameFile(currPath, destDir, name, opt_callback) {
-
-    filer.mv(currPath, destDir, name, function(entry) {
-        console.log(currPath + ' renamed to ' + entry.name + ".");
-
-        if (opt_callback) {
-            opt_callback();
-        }
-        
-        refreshFolder();
-    });
-}
-
 function renameEntry(i) {
     
     var entry = entries[i];
@@ -536,39 +537,51 @@ function renameEntry(i) {
         return;
     }
 
+    // Check if new name already exists
     filer.exists("/" + name, function() {
         
         alert("\"" + name + "\" already exists.");
+        return;
 
     }, function() {
         
         // Check if entry is a folder or a production file
-        // Not including  || Util.getFileExtension(entry.name) === ".wpjs" for now
         if (entry.isDirectory) {
 
             // Update production file and production directory
-            renameFile(entry.fullPath, "/" + entry.name, name + ".wpjs", function() {
+            filer.mv(entry.fullPath + "/" + entry.name + ".wpjs", "/" + entry.name, name + ".wpjs", function() {
 
                 // Rename folder after file has been successfully renamed
-                renameFile("/" + entry.name, "/", name);
+                filer.mv("/" + entry.name, "/", name, function() {
 
+                    console.log("Renamed production.");
+                    refreshFolder();
+                
+                }, onError);
+
+            }, function() {
+
+                // Attempt to rename the production folder even if the production file failed
+                filer.mv("/" + entry.name, "/", name, function() {
+                    
+                    console.log("Renamed production folder.");
+                    refreshFolder();
+
+                });
             });
-            // refreshFolder gets called by renameFile and ensures that HTML entries are properly renamed
 
         } else {
 
             // Handle other entries
             filer.mv(entry.fullPath, ".", name, function(newEntry) {
+
                 console.log(entry.name + ' renamed to ' + newEntry.name + ".");
-
                 refreshFolder();
+
             });
-
         }
-
     });
-
-    
+     
 }
 
 function removeFile(i, silent) {
@@ -734,6 +747,40 @@ function onKeydown(e) {
         e.stopPropagation();
         return;
     }
+}
+
+// Handle folder uploads from standard upload not drag and drop
+function onImport(e) {
+    
+    var files = e.target.files;
+    if (files.length) {
+
+        var count = 0;
+
+        Util.toArray(files).forEach(function(file, i) {
+
+            var folders = file.webkitRelativePath.split("/");
+            folders = folders.slice(0, folders.length - 1);
+
+            // Add each directory. If it already exists, 
+            mkdir(folders.join("/"), function(dirEntry) {
+                var path = file.webkitRelativePath;
+
+                count++;
+
+                // Write each file to its path. Skip "/." (which is a directory).
+                if (path.lastIndexOf("/.") != path.length - 2) {
+
+                    writeFile(filer.cwd.fullPath + path, file, false);
+
+                    if (count == files.length) {
+                        refreshFolder(); // Rerender view on final file.
+                    }
+
+                }
+            }, onError);
+        });
+    }
 
 }
 
@@ -776,45 +823,23 @@ function dragAndDropHandler(selector, onDropCallback) {
     el.addEventListener("drop", this.drop, false);
 }
 
+function handleFolderTransfer(files, e) {
+
+    var items = e.dataTransfer.items;
+    for (var i = 0, item; item = items[i]; ++i) {
+        filer.cp(item.webkitGetAsEntry(), filer.cwd, null, function(entry) {
+            addEntryToList(entry);
+            refreshFolder();
+        });
+    }
+}
+
 function addListeners() {
     document.addEventListener("keydown", onKeydown, false);
+    document.getElementById("folder_upload").addEventListener('change', onImport, false);
 
     // Handle files dropped onto the file explorer
-    var dragAndDrop = new dragAndDropHandler("body", function(files, e) {
-
-        console.log(files);
-        console.log(files.length);
-        var count = 0;
-        for (var i = 0; i < files.length; i++) {
-            
-            var file = files[i];
-            var folders = file.webkitRelativePath.split("/");
-            folders = folders.slice(0, folders.length - 1);
-
-            // Add each directory. If it already exists, 
-            mkdir(folders.join("/"), function(dirEntry) {
-                var path = file.webkitRelativePath;
-
-                count++;
-
-                console.log(path);
-                console.log(file);
-
-                // Write each file to its path. Skip "/." (which is a directory).
-                if (path.lastIndexOf("/.") != path.length - 2) {
-                    console.log(path);
-                    console.log(file);
-                    writeFile(path, file, false);
-                    if (count == files.length) {
-                        refreshFolder(); // Rerender view on final file.
-                    }
-
-                }
-            }, onError);
-        };
-
-    });
-
+    var dragAndDrop = new dragAndDropHandler("body", handleFolderTransfer);
 
 }
 
