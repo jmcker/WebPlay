@@ -158,28 +158,39 @@ function closeTitle(saveChanges) {
         if (text.value == "") {
             return;
         } else {
-            // Update production file, production directory, display text, and window hash
-            renameFile("/" + display.innerHTML + "/" + display.innerHTML + ".wpjs", ".", text.value + ".wpjs", function() {
 
-                // Rename parent folder after production file has been successfully renamed
-                renameFile("/" + display.innerHTML, "/", text.value, function() {
+            // Check if the production name already exists
+            filer.exists("/" + text.value, function() {
+        
+                alert("\"" + text.value + "\" already exists.");
+                text.value = display.innerHTML;
+                return;
 
-                    // Move into the renamed folder after it has been successfully renamed
-                    filer.cd("/" + text.value, function() {
+            }, function() {
 
-                        onscreenInfo("Successfully renamed production \"" + display.innerHTML + "\" to \"" + text.value + "\"");
+                // Update production file, production directory, display text, and window hash
+                renameFile("/" + display.innerHTML + "/" + display.innerHTML + ".wpjs", ".", text.value + ".wpjs", function() {
 
-                        // Wait to change the text values until everything completes successfully
-                        display.innerHTML = text.value;
-                        window.location.hash = text.value;
+                    // Rename parent folder after production file has been successfully renamed
+                    renameFile("/" + display.innerHTML, "/", text.value, function() {
+
+                        // Move into the renamed folder after it has been successfully renamed
+                        filer.cd("/" + text.value, function() {
+
+                            onscreenInfo("Successfully renamed production \"" + display.innerHTML + "\" to \"" + text.value + "\"");
+
+                            // Wait to change the text values until everything completes successfully
+                            display.innerHTML = text.value;
+                            window.location.hash = text.value;
                 
-                    }, function() {
-                        alert("An error occurred while renaming the production. Please manually check or change the name of the production folder and the .wpjs file.");
-                        return;
+                        }, function() {
+                            alert("An error occurred while renaming the production. Please manually check or change the name of the production folder and the .wpjs file.");
+                            return;
+                        });
                     });
                 });
-            });
             
+            });
         }
     }
 
