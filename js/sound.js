@@ -1072,7 +1072,7 @@ function updateDisplays(cueNum) {
         }
     }
 
-    if (!primed[nextVisualCue] && nextVisualCue != -1 && current - nextVisualCue <= userConfig.CUES_BEFORE_FULLSCREEN) {
+    if (!primed[nextVisualCue] && nextVisualCue != -1 && nextVisualCue - current <= userConfig.CUES_BEFORE_FULLSCREEN) {
         if (getType(nextVisualCue) === "image") {
             var image = new ImageCue(context, nextVisualCue);
             image.init(false); // Prime and load but do not display
