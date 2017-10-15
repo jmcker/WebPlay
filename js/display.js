@@ -34,6 +34,13 @@ class ImageCue {
         this.targetId = getTargetId(this.cueNum);
         this.timeBased = getIsTimeBased(this.cueNum);
 
+        // Check if cue has file
+        if (!this.filename) {
+            onscreenAlert("No file found for Cue #" + this.cueNum + "."); // Alert main window
+            this.stop();
+            return;
+        }
+
         var self = this;
         this.image.onload = function() {
             self.div.style.transition = "opacity " + self.fadeInTime + "s ease-in-out";
@@ -70,7 +77,7 @@ class ImageCue {
             this.init(true); // Prime, load, and reveal image
         } else {
             if (this.image.src === "" || !this.image.src) {
-                onscreenAlert("File " + this.filename + " not found for Display #" + this.display + "."); // Alert main window
+                onscreenAlert("File " + this.filename + " not found for Display " + this.display + "."); // Alert main window
                 this.stop();
                 return;
             }
@@ -86,7 +93,7 @@ class ImageCue {
 
         // Warn if display is muted
         if (displays[this.display] && displays[this.display].iframe.contentWindow && !displays[this.display].iframe.contentWindow.document.body.classList.contains("active")) {
-            onscreenAlert("Warning: Display #" + this.display + " is AV muted.", 5);
+            onscreenAlert("Warning: Display " + this.display + " is AV muted.", 5);
         }
     }
 
@@ -269,6 +276,13 @@ class VideoCue {
         this.action = getAction(this.cueNum);
         this.targetId = getTargetId(this.cueNum);
 
+        // Check if cue has file
+        if (!this.filename) {
+            onscreenAlert("No file found for Cue #" + this.cueNum + "."); // Alert main window
+            this.stop();
+            return;
+        }
+
         // Create audio nodes
         this.source = this.context.createMediaElementSource(this.player);
         this.panNode = this.context.createStereoPanner();
@@ -350,7 +364,7 @@ class VideoCue {
             this.init(true); // Prime, load, reveal, and play video
         } else {
             if (this.player.src === "" || !this.player.src) {
-                onscreenAlert("File " + this.filename + " not found for Display #" + this.display + "."); // Alert main window
+                onscreenAlert("File " + this.filename + " not found for Display " + this.display + "."); // Alert main window
                 this.stop();
                 return;
             }
@@ -368,7 +382,7 @@ class VideoCue {
 
         // Warn if display is muted
         if (displays[this.display] && displays[this.display].iframe.contentWindow && !displays[this.display].iframe.contentWindow.document.body.classList.contains("active")) {
-            onscreenAlert("Warning: Display #" + this.display + " is AV muted.", 5);
+            onscreenAlert("Warning: Display " + this.display + " is AV muted.", 5);
         }
     }
 
@@ -383,7 +397,6 @@ class VideoCue {
             this.div.parentNode.removeChild(this.div); // Remove from display window
         }
 
-        this.player = null;
         console.log("Stopped Cue #" + this.cueNum + ".");
         
         setElapsed(this.cueNum, null);
@@ -634,7 +647,7 @@ function addDisplay(id, launch) {
     // Check if display menu entries already exist
     if (document.getElementById("lli" + id)) {
         launchDisplay(id);
-        onscreenInfo("Display #" + id + " already exists. Launching...");
+        onscreenInfo("Display " + id + " already exists. Launching...");
         return;
     } else {
         addDisplayHTMLEntries(id);
@@ -687,7 +700,7 @@ function addDisplayHTMLEntries(id) {
     close.appendChild(cli);
     avmute.appendChild(avli);
 
-    console.log("Added Display #" + id + ".");
+    console.log("Added Display " + id + ".");
 }
 
 function clearDisplayHTMLEntries() {
@@ -739,7 +752,7 @@ function removeDisplay(id) {
     prodData.displayList.splice(prodData.displayList.indexOf(id), 1); // Remove from display list
     console.log(prodData.displayList);
 
-    console.log("Removed Display #" + id + ".");
+    console.log("Removed Display " + id + ".");
     setSavedIndicator(false);
 }
 
@@ -761,7 +774,7 @@ function launchDisplay(id) {
     // Focus display if already open
     if (displays[id].window && !displays[id].window.closed) {
         displays[id].window.focus();
-        onscreenInfo("Display #" + id + " is already active.");
+        onscreenInfo("Display " + id + " is already active.");
         return;
     }
 
@@ -776,7 +789,7 @@ function launchDisplay(id) {
     
     // Window instructions, styling, and script
     var s = (userConfig.CUES_BEFORE_FULLSCREEN > 1 ? "s" : "");
-    win.document.write("<p>Drag this window onto <b>Display #" + id + "</b>.</p>");
+    win.document.write("<p>Drag this window onto <b>Display " + id + "</b>.</p>");
     win.document.write("<p>" + userConfig.CUES_BEFORE_FULLSCREEN + " cue" + s + " before the display is needed, the content window below will request fullscreen access. Upon triggering, visual content will appear in the fullscreen window. Content will not display if this window is closed or fullscreen access has not been allowed!</p><br>");
     if (userConfig.CUES_BEFORE_FULLSCREEN >= 0) {
         win.document.write("<button onclick=\"initiateFullscreen(document.getElementsByTagName('iframe')[0])\">Test fullscreen access</button>");
@@ -806,7 +819,7 @@ function launchDisplay(id) {
         return msg;
     });
 
-    console.log("Launched Display #" + id + ".");
+    console.log("Launched Display " + id + ".");
 }
 
 function launchAllDisplays() {
@@ -818,11 +831,11 @@ function launchAllDisplays() {
 function closeDisplay(id) {
     if (displays[id] && !displays[id].window.closed) {
         displays[id].window.close();
-        console.log("Closed Display #" + id + ".");
+        console.log("Closed Display " + id + ".");
 		return true;
     } else {
         // Let this be silent
-        //onscreenInfo("Display #" + id + " is already closed.");
+        //onscreenInfo("Display " + id + " is already closed.");
     }
 }
 
@@ -841,7 +854,7 @@ function closeAllDisplays(silent) {
 // Pre load files and open fullscreen display before content needs to be shown
 function primeDisplay(id, content) {
     if (!displays[id] || displays[id].window.closed) {
-        onscreenAlert("Display #" + id + " is not active for Cue #" + content.id + ".");
+        onscreenAlert("Display " + id + " is not active for Cue #" + content.id + ".");
         return false;
     }
     
@@ -867,7 +880,7 @@ function initiateFullscreen(iframe) {
 
 function revealBodyContent(id) {
     if (!displays[id] || displays[id].window.closed) {
-        onscreenAlert("Display #" + id + " is not active.");
+        onscreenAlert("Display " + id + " is not active.");
         return false;
     }
     
@@ -879,7 +892,7 @@ function revealBodyContent(id) {
 
 function hideBodyContent(id) {
     if (!displays[id] || displays[id].window.closed) {
-        onscreenAlert("Display #" + id + " is not active.");
+        onscreenAlert("Display " + id + " is not active.");
         return false;
     }
     
@@ -891,7 +904,7 @@ function hideBodyContent(id) {
 // AV mute function
 function toggleAvMute(id) {
     if (!displays[id] || displays[id].window.closed) {
-        onscreenAlert("Display #" + id + " is not active.");
+        onscreenAlert("Display " + id + " is not active.");
         return false;
     }
 
@@ -903,7 +916,7 @@ function toggleAvMute(id) {
 function muteAllDisplays() {
     for (var id = 1; id <= prodData.displayList.length; id++) {
         if (!displays[id] || displays[id].window.closed) {
-            onscreenAlert("Display #" + id + " is not active.");
+            onscreenAlert("Display " + id + " is not active.");
             continue;
         }
 
@@ -914,7 +927,7 @@ function muteAllDisplays() {
 function unmuteAllDisplays() {
     for (var id = 1; id <= prodData.displayList.length; id++) {
         if (!displays[id] || displays[id].window.closed) {
-            onscreenAlert("Display #" + id + " is not active.");
+            onscreenAlert("Display " + id + " is not active.");
 			continue;
         }
 
@@ -926,7 +939,7 @@ function unmuteAllDisplays() {
 // Default id for elements is their cue number
 function revealContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
-        onscreenAlert("Display #" + displayId + " is not active.");
+        onscreenAlert("Display " + displayId + " is not active.");
         activeCues[elemId].stop(); // Stop cue
         return false;
     }
@@ -950,7 +963,7 @@ function revealContent(displayId, elemId) {
 function hideContent(displayId, elemId) {
     if (!displays[displayId] || displays[displayId].window.closed) {
         // Let this be silent
-        //onscreenAlert("Display #" + displayId + " is not active.");
+        //onscreenAlert("Display " + displayId + " is not active.");
         // Calling cue.stop() would create an infinite loop
         return false;
     }
