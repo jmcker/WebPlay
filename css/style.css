@@ -373,6 +373,14 @@ h2 {
     max-width: inherit;
 }
 
+#edit_param_table5 td {
+    max-width: 125px;
+}
+
+#edit_control_target {
+    max-width: inherit;
+}
+
 .edit-clear-button {
     font-family: inherit;
     font: inherit;
