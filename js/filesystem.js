@@ -230,6 +230,7 @@ function loadProductionFile(revert) {
 
 function saveProductionFile() {
     prodData.cueListContent = getCueListHTML();
+
     filer.write(getProdName() + ".wpjs", {data: "var prodData = " + JSON.stringify(prodData), type: "application/javascript"}, function(fileEntry, fileWriter) {
         onscreenInfo("Production saved.", 1);
         setSavedIndicator(true);

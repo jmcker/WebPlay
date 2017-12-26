@@ -98,14 +98,14 @@ function setGlobalGain(dB) {
     var output = meteredOuputSelector.value;
     globalGainControl.value = dB;
     globalGainDisplay.innerHTML = dB + "dB";
-    outputs[output + "_gain"].gain.value = dBToGain(dB);
+    outputs[output + "_gain"].gain.setValueAtTime(dBToGain(dB), context.currentTime);
 }
 
 function setGlobalPan(pan) {
     var output = meteredOuputSelector.value;
     globalPanControl.value = pan;
     globalPanDisplay.innerHTML = pan;
-    outputs[output].pan.value = pan / 50;
+    outputs[output].pan.setValueAtTime(pan / 50, context.currentTime);
 }
 
 function dBToGain(dB) {

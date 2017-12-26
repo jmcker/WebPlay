@@ -777,21 +777,21 @@ function setEditPitch(pitch) {
 
 function setLiveCueVol(cueNum, vol) {
     if (typeof activeCues !== "undefined" && activeCues[cueNum]) {
-        activeCues[cueNum].gainNode.gain.value = dBToGain(vol);
+        activeCues[cueNum].gainNode.gain.setValueAtTime(dBToGain(vol), context.currentTime);
     }
     
     if (typeof previewing !== "undefined" && previewing && cueNum === currentlyEditing) {
-        previewing.gainNode.gain.value = dBToGain(vol);
+        previewing.gainNode.gain.setValueAtTime(dBToGain(vol), context.currentTime);
     }
 }
 
 function setLiveCuePan(cueNum, pan) {
     if (typeof activeCues !== "undefined" && activeCues[cueNum]) {
-        activeCues[cueNum].panNode.pan.value = pan / 50;
+        activeCues[cueNum].panNode.pan.setValueAtTime(pan / 50, context.currentTime);
     }
     
     if (typeof previewing !== "undefined" && previewing && cueNum === currentlyEditing) {
-        previewing.panNode.pan.value = pan / 50;
+        previewing.panNode.pan.setValueAtTime(pan / 50, context.currentTime);
     }
 }
 
