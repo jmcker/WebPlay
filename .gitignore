@@ -1,5 +1,6 @@
 test.jpg
 backup/*
+.vscode
 
 # compiled output
 /dist
