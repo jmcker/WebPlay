@@ -1,3 +1,31 @@
-<p>
-  production-menu works!
-</p>
+<!-- Header -->
+<div class="header">
+    <div class="title">
+        <h1><span id="display_title" class="visible">Production Menu</span></h1>
+    </div>
+
+    <!-- Menu buttons -->
+    <nav class="menu-button-box">
+        <ul>
+            <li><a href="javascript:void(0);" onclick="createProd()">New Production</a></li>
+            <li><a href="javascript:void(0);" onclick="refreshFolder()">Refresh Folder</a></li>
+            <li><a href="javascript:void(0);" onclick="uploadFile()">Upload Files</a></li>
+            <li><a href="javascript:void(0);" onclick="uploadProd()">Upload Show</a></li>
+        </ul>
+    </nav>
+
+    <!-- Alert bart -->
+    <div id="alert_container" class="alert-container">
+        <div id="alert_bar" class="alert-bar"></div>
+    </div>
+    
+    <!-- Current Working Directory -->
+    <input type="text" id="cwd" class="cwd" disabled>
+    
+    <!-- File list -->
+    <div id="usage" class="usage">
+        Used: <span id="fs_used"></span>
+        Free: <span id="fs_free"></span>
+        Capacity: <span id="fs_cap"></span>
+    </div>
+</div>
