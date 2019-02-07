@@ -1,5 +1,4 @@
 /* You can add global styles to this file, and also import other style files */
-@import 'app/ext/dropdown.css';
 
 body {
     font-family: Arial, Gadget, sans-serif;
@@ -41,7 +40,6 @@ h2 {
 
 .title {
     position: relative;
-    left: 5px;
 }
 
     .title .visible {

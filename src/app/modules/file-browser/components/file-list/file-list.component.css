@@ -1,0 +1,44 @@
+.files {
+    position: relative;
+    width: 98%;
+    min-height: 400px;
+    padding: 10px;
+    margin-top: 5px;
+    background-color: white;
+}
+
+.icon {
+    height: 25px;
+    width: 25px;
+    vertical-align: bottom;
+    cursor: pointer;
+}
+
+.production-list {
+    border: 2px solid black;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+    table.production-list th, table.production-list tr {
+        outline: 1px solid black;
+        border-collapse: collapse;
+    }
+    
+    table.production-list th {
+        padding: 0 10px 0 10px;
+    }
+    
+    table.production-list td {
+        font-size: .75em;
+        padding: 0 20px 0 20px;
+    }
+    
+    table.production-list input {
+        font-family: inherit;
+        max-width: 140px;
+    }
+
+.prod-name {
+    
+}

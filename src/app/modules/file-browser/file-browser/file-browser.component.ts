@@ -7,6 +7,8 @@ import { Component, OnInit } from '@angular/core';
 })
 export class FileBrowserComponent implements OnInit {
 
+    private previewing: boolean = false;
+
     constructor() { }
 
     ngOnInit() {

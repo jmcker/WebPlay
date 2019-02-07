@@ -1,0 +1,9 @@
+.usage {
+    position: relative;
+    display: inline;
+    white-space: nowrap;
+}
+
+.usage span {
+    margin-right: 20px;
+}

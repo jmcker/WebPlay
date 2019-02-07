@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { FileBrowserComponent } from 'src/app/modules/file-browser/file-browser/file-browser.component';
 
 @Component({
     selector: 'app-production-menu',

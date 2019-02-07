@@ -1,0 +1,29 @@
+.file-preview-container {
+    position: fixed;
+    top: 120px;
+    left: 0;
+    width: 100%;
+    z-index: 3;
+    overflow: auto;
+}
+
+.file-preview-inner {
+    margin: auto;
+    width: 75%;
+    height: 75vh;
+    background-color: steelblue;
+    padding: 20px;
+    z-index: 3;
+    overflow: auto;
+}
+
+.file-preview-info {
+    padding-bottom: 5px;
+}
+
+.file-preview {
+    width: 100%;
+    text-align: center;
+    resize: vertical;
+    overflow: auto;
+}
