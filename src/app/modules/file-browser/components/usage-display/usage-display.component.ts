@@ -1,5 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FileSystemService } from 'src/app/_services/file-system.service';
+import { Observable } from 'rxjs';
+import { LogService } from 'src/app/_services/log.service';
+import { FileSystemUsage } from 'src/app/_models/file-system-usage';
 
 @Component({
     selector: 'app-usage-display',
@@ -8,19 +11,19 @@ import { FileSystemService } from 'src/app/_services/file-system.service';
 })
 export class UsageDisplayComponent implements OnInit {
 
-    private free: number = 0;
-    private used: number = 0;
-    private capacity: number = 0;
+    private usage: FileSystemUsage;
 
-    constructor(public fss: FileSystemService) {
-        console.log(fss);
-
-        fss.isOpen$.subscribe((data) => {
-            console.log(`Value: ${data}`);
-        });
+    constructor(
+        private fss: FileSystemService,
+        private logServ: LogService,
+    ) {
+        this.logServ.debug(fss);
     }
 
     ngOnInit() {
+        this.fss.usage$.subscribe((usage: FileSystemUsage) => {
+            this.usage = usage;
+        });
     }
 
 }

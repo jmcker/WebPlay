@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { LogService } from 'src/app/_services/log.service';
+import { FileSystemService } from 'src/app/_services/file-system.service';
 
 @Component({
     selector: 'app-filepath-display',
@@ -7,11 +9,17 @@ import { Component, OnInit } from '@angular/core';
 })
 export class FilepathDisplayComponent implements OnInit {
 
-    private path: string = "filesystem:http://example-path";
+    private cwd: string;
 
-    constructor() { }
+    constructor(
+        private fss: FileSystemService,
+        private logServ: LogService,
+    ) { }
 
     ngOnInit() {
+        this.fss.cwd$.subscribe((cwd) => {
+            this.cwd = cwd;
+        });
     }
 
 }
