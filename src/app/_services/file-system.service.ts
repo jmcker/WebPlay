@@ -96,7 +96,7 @@ export class FileSystemService {
     toMB(bytes: number): number {
         return parseFloat((bytes / 1024.0 / 1024.0).toFixed(2));
     }
-    
+
     /**
      * Update usage statistics.
      */
@@ -105,14 +105,28 @@ export class FileSystemService {
         this.filer.df(function (used: number, free: number, cap: number) {
             self.usageSubject.next({
                 used: self.toMB(used),
-                free: self.toMB(free), 
+                free: self.toMB(free),
                 capacity: self.toMB(cap)
             });
-        });
+        }, this.logServ.error);
     }
 
     updateCwd() {
         this.cwdSubject.next(this.filer.pathToFilesystemURL(this.filer.cwd.fullPath));
+    }
+
+    cd(path: string): Promise<any> {
+        return new Promise((resolve, reject) => {
+            let self = this;
+            this.filer.cd(path, function(dirEntry) {
+                self.logServ.debug(dirEntry);
+                self.updateCwd();
+                resolve(dirEntry);
+            }, (e) => {
+                self.logServ.error(e);
+                reject(e);
+            });
+        });
     }
 
 }
