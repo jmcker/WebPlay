@@ -20,10 +20,9 @@ export class FileListComponent implements OnInit {
 
     ngOnInit() {
         this.fss.cwdFileList$
-        .pipe(debounceTime(500))
+        .pipe()
         .subscribe((entries) => {
-            this.logServ.debug(`File list re-render triggered.`);
-            this.logServ.debug(entries);
+            this.logServ.debug(`FileListComp: File list re-render triggered.`);
 
             this.ngZone.run(() => {
                 this.entries = entries;

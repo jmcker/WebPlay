@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FileSystemService } from 'src/app/_services/file-system.service';
 import { LogService } from 'src/app/_services/log.service';
+import { WebkitFile } from 'src/app/_models/webkit-file';
 
 @Component({
     selector: 'app-file-upload',
@@ -51,7 +52,9 @@ export class FileUploadComponent implements OnInit {
             this.logServ.info('All files stored successfully.');
         })
         .catch((e) => {
-            this.logServ.alert('1 or more files failed to store.');
+            // Each file will individually print an error if it fails
+            // This isn't really helpful as a summary since it fails fast on the first issue
+            this.logServ.debug('1 or more files were not stored.');
         });
     }
 
@@ -59,15 +62,28 @@ export class FileUploadComponent implements OnInit {
      * Write the files contained in a folder once the user selects them
      * This will create the subfolder if not already present
      */
-    onFolderAdded() {
-        const files: File[] = this.folderUpload.nativeElement.files;
-        console.dir(this.folderUpload.nativeElement);
+    async onFolderAdded() {
+        const files: WebkitFile[] = this.folderUpload.nativeElement.files;
+        let promises = [];
 
         for (let i = 0; i < files.length; i++) {
-            // console.dir(files[i].webkitRelativePath);
+            // Create parent folder and any subfolders
+            let parentPath = this.fss.dirname(files[i].webkitRelativePath);
+            this.logServ.debug(`Creating parent folders: ${parentPath}`);
+            await this.fss.mkdir(parentPath);
 
-            // TODO: Make folders and subfolders
-            // TODO: Write files
+            this.logServ.debug(`Writing file ${files[i].webkitRelativePath}`);
+            promises.push(this.fss.write(files[i].webkitRelativePath, { isFile: true, data: files[i], type: files[i].type, size: files[i].size }));
         }
+
+        Promise.all(promises)
+        .then(() => {
+            this.logServ.info('All files stored successfully.');
+        })
+        .catch((e) => {
+            // Each file will individually print an error if it fails
+            // This isn't really helpful as a summary since it fails fast on the first issue
+            this.logServ.debug('1 or more files were not stored.');
+        });
     }
 }

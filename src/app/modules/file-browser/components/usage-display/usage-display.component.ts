@@ -16,9 +16,7 @@ export class UsageDisplayComponent implements OnInit {
     constructor(
         private fss: FileSystemService,
         private logServ: LogService,
-    ) {
-        this.logServ.debug(fss);
-    }
+    ) { }
 
     ngOnInit() {
         this.fss.usage$.subscribe((usage: FileSystemUsage) => {

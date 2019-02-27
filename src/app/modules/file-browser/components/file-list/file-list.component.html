@@ -1,24 +1,28 @@
 <div class="files">
+
+    <!-- Parent directory -->
     <div class="up">
-        <!-- TODO: Point this to real cd function -->
-        <a href="javascript:" (click)="cd(-1)">
-            <img src="assets/img/folder.png" class="icon" (click)="cd(-1)">
+        <a href="javascript:void(0);" (click)="fss.cd('..')">
+            <img src="assets/img/folder.png" class="icon" (click)="fss.cd('..')">
         </a>
         &nbsp;
-        <a href="javascript:" (click)="cd(-1)">[parent directory]</a>
+        <a href="javascript:void(0);" (click)="fss.cd('..')">[parent directory]</a>
     </div>
+
+    <!-- File list -->
     <table id="production_list" class="production-list">
         <tr *ngFor="let entry of entries">
             <ng-container *ngIf="entry.isDirectory; then isDirectory; else isFile"></ng-container>
 
+            <!-- Directories -->
             <ng-template #isDirectory>
                 <td>
                     <!-- TODO: Point this to real cd function -->
-                    <img src="assets/img/folder.png" class="icon" (click)="cd()" alt="[folder icon]">
+                    <img src="assets/img/folder.png" class="icon" (click)="fss.cd(entry.name)" alt="[folder icon]">
                 </td>
                 <td class="prod-name">
                     <!-- TODO: Point this to openProd function -->
-                    <a href="javascript:void(0);" (click)="cd()">{{ entry.name }}</a>
+                    <a href="javascript:void(0);" (click)="fss.cd(entry.name)">{{ entry.name }}</a>
                 </td>
                 <td>
                     <a href="javascript:void(0);" (click)="openProd()">Launch Show</a>
@@ -36,9 +40,10 @@
                 </td>
             </ng-template>
 
+            <!-- Files -->
             <ng-template #isFile>
                 <td>
-                    <!-- TODO: Point this to real cd function -->
+                    <!-- TODO: Point this to real read function -->
                     <img src="assets/img/file.png" class="icon" (click)="readFile()" alt="[file icon]">
                 </td>
                 <td class="prod-name">

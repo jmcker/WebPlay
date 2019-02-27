@@ -23,14 +23,16 @@ export class LogService {
      * @param msg Message to display
      */
     error(e: any, alertMsg?: string) {
-        if (typeof e === 'object') {
+        if (alertMsg) {
+            this.alert(alertMsg);
+        }
+
+        if (e instanceof Error) {
+            console.trace(e);
+        } else if (typeof e === 'object') {
             console.dir(e);
         } else {
             console.error(e);
-        }
-
-        if (alertMsg) {
-            this.alert(alertMsg);
         }
     }
 

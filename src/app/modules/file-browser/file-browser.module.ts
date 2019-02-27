@@ -15,7 +15,8 @@ import { UsageDisplayComponent } from './components/usage-display/usage-display.
         FileBrowserRoutingModule
     ],
     exports: [
-        FileBrowserComponent
+        FileBrowserComponent,
+        FilePreviewComponent
     ]
 })
 export class FileBrowserModule { }
