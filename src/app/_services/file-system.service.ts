@@ -5,6 +5,7 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { FileSystemUsage } from '../_models/file-system-usage';
 import { LogService } from './log.service';
 import { FileSystemData } from '../_models/file-system-data';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 declare global {
     interface Navigator {
@@ -70,7 +71,8 @@ export class FileSystemService {
     private filer = null;
 
     constructor(
-        private logServ: LogService
+        private logServ: LogService,
+        public sanitizer: DomSanitizer
     ) {
         this.filer = new Filer();
         logServ.debug(this.filer);
@@ -169,6 +171,17 @@ export class FileSystemService {
         this.logServ.debug(`Compare path: ${path} to ${this.cwdSubject.value}`);
 
         return path === this.cwdSubject.value;
+    }
+
+    /**
+     * Bypass restrictions that mark filesystem URLs as unsafe.
+     * 
+     * @param path URL or path to sanitize
+     */
+    sanitizeFsUrl(path: string): SafeUrl {
+        path = this.filer.pathToFilesystemURL(path);
+
+        return this.sanitizer.bypassSecurityTrustUrl(path);
     }
 
     /**
