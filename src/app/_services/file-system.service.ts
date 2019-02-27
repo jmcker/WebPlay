@@ -337,6 +337,7 @@ export class FileSystemService {
 
                 // Update the file list as we may have modified the cwd
                 this.updateCwdFileList();
+                this.updateUsage();
 
                 resolve(dirEntry);
             }, (e) => {
@@ -359,6 +360,7 @@ export class FileSystemService {
 
                 // Update the file list as we may have modified the cwd
                 this.updateCwdFileList();
+                this.updateUsage();
 
                 resolve(true);
             }, (e) => {
@@ -383,6 +385,7 @@ export class FileSystemService {
 
                 // Update the file list as we may have modified the cwd
                 this.updateCwdFileList();
+                this.updateUsage();
 
                 resolve(entry);
             }, (e) => {
@@ -463,6 +466,7 @@ export class FileSystemService {
 
                 // Update the file list as we may have modified the cwd
                 this.updateCwdFileList();
+                this.updateUsage();
 
                 resolve(fileEntry);
             }, (e) => {
