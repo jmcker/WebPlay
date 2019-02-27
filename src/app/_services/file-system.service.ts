@@ -218,7 +218,7 @@ export class FileSystemService {
      * @param increaseAmt Increase amount in bytes
      */
     async increaseQuota(bytes: number): Promise<number> {
-        return new Promise((resolve, reject) => {
+        return new Promise<number>((resolve, reject) => {
             navigator.webkitPersistentStorage.requestQuota(this.usageSubject.value.capacity + bytes, (grantedBytes) => {
                 this.logServ.debug(`Filesystem expanded to: ${this.toMB(grantedBytes)} MB`);
 
@@ -239,7 +239,7 @@ export class FileSystemService {
      * @returns Promise that resolves to array of FileEntry objects for the directory
      */
     async ls(path: string = '.'): Promise<any[]> {
-        return new Promise((resolve, reject) => {
+        return new Promise<any[]>((resolve, reject) => {
             this.filer.ls(path, (entries) => {
 
                 // Update subscribers if we're listing the cwd
@@ -261,7 +261,7 @@ export class FileSystemService {
      * @return Promise which resolves to FileSystemUsage object
      */
     async df(): Promise<FileSystemUsage> {
-        return new Promise((resolve, reject) => {
+        return new Promise<FileSystemUsage>((resolve, reject) => {
             this.filer.df((used: number, free: number, cap: number) => {
                 let usage = {
                     used: used,
@@ -309,7 +309,7 @@ export class FileSystemService {
      * @return Promise which resolves to truthiness of existence
      */
     async exists(path: string): Promise<boolean> {
-        return new Promise((resolve, reject) => {
+        return new Promise<boolean>((resolve, reject) => {
             this.filer.exists(path, () => {
                 this.logServ.debug(`File ${path} already exists.`);
                 resolve(true);
@@ -353,7 +353,7 @@ export class FileSystemService {
      * @return Promise which resolves to
      */
     async rm(path: string): Promise<boolean> {
-        return new Promise((resolve, reject) => {
+        return new Promise<boolean>((resolve, reject) => {
             this.filer.rm(path, () => {
                 this.logServ.debug(`Removed ${path} from filesystem.`);
 
