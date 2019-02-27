@@ -101,6 +101,7 @@ export class FileSystemService {
                 this.logServ.debug(`Opened FileSystem: ${fs.name}.`);
 
                 this.updateCwd();
+                this.updateCwdFileList();
                 this.updateUsage();
                 resolve(this.filer);
             }, (e) => {
@@ -222,6 +223,7 @@ export class FileSystemService {
                 this.logServ.debug(`Filesystem expanded to: ${this.toMB(grantedBytes)} MB`);
 
                 this.updateUsage();
+                this.logServ.debug(`Received ${grantedBytes} bytes.`);
                 resolve(grantedBytes);
             }, (e) => {
                 this.logServ.error(e, `Quota increase failed.`);

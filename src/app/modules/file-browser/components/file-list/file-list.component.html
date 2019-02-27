@@ -1,11 +1,66 @@
-<div id="files" class="files">
+<div class="files">
     <div class="up">
-        <a href="javascript:" onclick="cd(-1)">
-            <img src="assets/img/folder.png" class="icon" onclick="cd(-1)">
+        <!-- TODO: Point this to real cd function -->
+        <a href="javascript:" (click)="cd(-1)">
+            <img src="assets/img/folder.png" class="icon" (click)="cd(-1)">
         </a>
         &nbsp;
-        <a href="javascript:" onclick="cd(-1)">[parent directory]</a>
+        <a href="javascript:" (click)="cd(-1)">[parent directory]</a>
     </div>
-    <table id="production_list" class="production-list"></table>
+    <table id="production_list" class="production-list">
+        <tr *ngFor="let entry of entries">
+            <ng-container *ngIf="entry.isDirectory; then isDirectory; else isFile"></ng-container>
+
+            <ng-template #isDirectory>
+                <td>
+                    <!-- TODO: Point this to real cd function -->
+                    <img src="assets/img/folder.png" class="icon" (click)="cd()" alt="[folder icon]">
+                </td>
+                <td class="prod-name">
+                    <!-- TODO: Point this to openProd function -->
+                    <a href="javascript:void(0);" (click)="cd()">{{ entry.name }}</a>
+                </td>
+                <td>
+                    <a href="javascript:void(0);" (click)="openProd()">Launch Show</a>
+                </td>
+                <td>
+                    <a href="javascript:void(0);" (click)="renameEntry()">Rename</a>
+                </td>
+                <td>
+                    <a href="javascript:void(0);" (click)="downloadProduction()">Download</a>
+                </td>
+                <td>
+                </td>
+                <td>
+                    <a href="javascript:void(0);" (click)="deleteProd()">Delete</a>
+                </td>
+            </ng-template>
+
+            <ng-template #isFile>
+                <td>
+                    <!-- TODO: Point this to real cd function -->
+                    <img src="assets/img/file.png" class="icon" (click)="readFile()" alt="[file icon]">
+                </td>
+                <td class="prod-name">
+                    <!-- TODO: Point this to openProd function -->
+                    <a href="javascript:void(0);" (click)="readFile()">{{ entry.name }}</a>
+                </td>
+                <td>
+                    <a href="javascript:void(0);" (click)="readFile()">Preview</a>
+                </td>
+                <td>
+                    <a href="javascript:void(0);" (click)="renameEntry()">Rename</a>
+                </td>
+                <td>
+                    <a href="{{ entry.toURL() }}" download>Download</a>
+                </td>
+                <td>
+                </td>
+                <td>
+                    <a href="javascript:void(0);" (click)="removeFile()">Delete</a>
+                </td>
+            </ng-template>
+        </tr>
+    </table>
     <div id="file_message" class="file-message"></div>
 </div>
