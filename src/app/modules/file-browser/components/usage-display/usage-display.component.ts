@@ -22,7 +22,7 @@ export class UsageDisplayComponent implements OnInit {
 
     ngOnInit() {
         this.fss.usage$.subscribe((usage: FileSystemUsage) => {
-            this.usage = usage;
+            this.usage = this.fss.usageToMB(usage);
         });
     }
 

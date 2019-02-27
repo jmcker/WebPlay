@@ -1,5 +1,5 @@
 <!-- Hidden -->
-<div class="hidden">
-    <input type="file" id="file_upload" multiple>
-    <input type="file" id="folder_upload" webkitdirectory="" directory="">
+<div class="">
+    <input type="file" #file (change)="onFilesAdded()" multiple>
+    <input type="file" #folder (change)="onFolderAdded()" webkitdirectory="" directory="">
 </div>

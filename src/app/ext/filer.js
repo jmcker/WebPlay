@@ -304,7 +304,7 @@ var Filer = new function() {
          *     These can be paths or filesystem: URLs.
          * @param {Function=} opt_errorHandler Optional error callback if the retrieval fails.
          */
-         // J. McKernan 5/25/17 ------- Changes from original copy of filer.js ------- 
+         // J. McKernan 5/25/17 ------- Changes from original copy of filer.js -------
         var getEntry_ = function(callback, paths, opt_errorHandler) {
             var srcStr = paths[0];
             var destStr = paths[1];
@@ -548,7 +548,7 @@ var Filer = new function() {
             var exclusive = opt_exclusive != null ? opt_exclusive : false;
 
             var folderParts = path.split('/');
-            // J. McKernan 8/10/17 ------- Changes from original copy of filer.js ------- 
+            // J. McKernan 8/10/17 ------- Changes from original copy of filer.js -------
             if (folderParts[0] === "")
                 folderParts = folderParts.slice(1);
 
@@ -569,7 +569,7 @@ var Filer = new function() {
                                 createDir(dirEntry, folders.slice(1));
                             } else {
                                 // Return the last directory that was created.
-                                if (opt_successCallback) 
+                                if (opt_successCallback)
                                     opt_successCallback(dirEntry);
                             }
                         } else {
@@ -581,7 +581,7 @@ var Filer = new function() {
                             }
                         }
                     }, function(e) {
-                        // J. McKernan 8/10/17 ------- Changes from original copy of filer.js ------- 
+                        // J. McKernan 8/10/17 ------- Changes from original copy of filer.js -------
                         if (e.name === "InvalidModificationError" || e.code === FileError.PATH_EXISTS_ERR) {
                             e = new Error("\"" + path + "\" already exists");
                             if (opt_errorHandler) {
@@ -618,17 +618,17 @@ var Filer = new function() {
             if (entryOrPath.isFile) {
                 entryOrPath.file(successCallback, opt_errorHandler);
             } else {
-                // J. McKernan 5/25/17 ------- Changes from original copy of filer.js ------- 
-                getEntry_(function(fileEntry) { 
-                    fileEntry.file(successCallback, opt_errorHandler); 
+                // J. McKernan 5/25/17 ------- Changes from original copy of filer.js -------
+                getEntry_(function(fileEntry) {
+                    fileEntry.file(successCallback, opt_errorHandler);
                 }, [pathToFsURL_(entryOrPath)], opt_errorHandler);
             }
         };
-        
-        // J. McKernan 5/25/17 ------- Changes from original copy of filer.js ------- 
+
+        // J. McKernan 5/25/17 ------- Changes from original copy of filer.js -------
         /**
          * Determines whether or not a file or directory exists.
-         * 
+         *
          * @param {string|FileEntry} entryOrPath A path, filesystem URL, or FileEntry
          *     of the file to lookup.
          * @param {Function} successCallback Function to be called if file exists
@@ -728,7 +728,7 @@ var Filer = new function() {
             if (entryOrPath.isFile || entryOrPath.isDirectory) {
                 removeIt(entryOrPath);
             } else {
-                // J. McKernan 5/25/17 ------- Changes from original copy of filer.js ------- 
+                // J. McKernan 5/25/17 ------- Changes from original copy of filer.js -------
                 getEntry_(removeIt, [entryOrPath], opt_errorHandler);
             }
         };
@@ -768,7 +768,7 @@ var Filer = new function() {
                             throw e;
                         }
                     }
-                    // J. McKernan 5/25/17 ------- Changes from original copy of filer.js ------- 
+                    // J. McKernan 5/25/17 ------- Changes from original copy of filer.js -------
                 }, [dirEntryOrPath], opt_errorHandler);
             }
         };
@@ -853,7 +853,7 @@ var Filer = new function() {
             if (entryOrPath.isFile) {
                 writeFile_(entryOrPath);
             } else if (isFsURL_(entryOrPath)) {
-                // J. McKernan 5/25/17 ------- Changes from original copy of filer.js ------- 
+                // J. McKernan 5/25/17 ------- Changes from original copy of filer.js -------
                 getEntry_(writeFile_, [entryOrPath], opt_errorHandler);
             } else {
                 cwd_.getFile(entryOrPath, {
