@@ -896,4 +896,5 @@ if (typeof exports !== 'undefined') {
         module.exports = Filer;
     }
     exports.Filer = Filer;
+    exports.Util = Util; // Added 2/27/2019
 }

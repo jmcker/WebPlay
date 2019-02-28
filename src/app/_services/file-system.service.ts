@@ -1,11 +1,15 @@
 import { Injectable } from '@angular/core';
 
 import Filer from 'src/app/ext/filer.js';
+import Util from 'src/app/ext/filer.js';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { FileSystemUsage } from '../_models/file-system-usage';
 import { LogService } from './log.service';
 import { FileSystemData } from '../_models/file-system-data';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { FileSystemEntry } from '../_models/file-system-entry';
+import { FileSystem } from '../_models/file-system';
+import { FileSystemDirectoryEntry } from '../_models/file-system-directory-entry';
 
 declare global {
     interface Navigator {
@@ -57,7 +61,7 @@ export class FileSystemService {
     /**
      * Behavior subject for files in the current directory
      */
-    private cwdFileListSubject = new BehaviorSubject<any[]>([]);
+    private cwdFileListSubject = new BehaviorSubject<FileSystemEntry[]>([]);
     /**
      * Observable which can be subscribed to to receive file list changes
      */
@@ -70,11 +74,17 @@ export class FileSystemService {
      */
     private filer = null;
 
+    /**
+     * Instance of Util class from filer.js
+     */
+    public util = null;
+
     constructor(
         private logServ: LogService,
         public sanitizer: DomSanitizer
     ) {
         this.filer = new Filer();
+        this.util = new Util();
         logServ.debug(this.filer);
 
         this.init();
@@ -85,14 +95,14 @@ export class FileSystemService {
      * Open an existing filesystem or prompt the user for permission
      * to create a new one.
      */
-    async init(): Promise<any> {
-        return new Promise((resolve, reject) => {
+    async init(): Promise<FileSystem> {
+        return new Promise<FileSystem>((resolve, reject) => {
 
             // If we're already done
             if (this.filer !== null && this.filer.isOpen) {
                 this.logServ.debug('init: Filesystem already initialized.');
 
-                resolve(this.filer);
+                resolve(this.filer.fs);
             }
 
             // Initialize the file file system using the filer.js library
@@ -105,7 +115,7 @@ export class FileSystemService {
                 this.updateCwd();
                 this.updateCwdFileList();
                 this.updateUsage();
-                resolve(this.filer);
+                resolve(fs);
             }, (e) => {
                 this.logServ.error(e, `Failed to open file system.`);
                 reject(`Failed to open file system: ${e.message}`)
@@ -182,7 +192,7 @@ export class FileSystemService {
 
     /**
      * Bypass restrictions that mark filesystem URLs as unsafe.
-     * 
+     *
      * @param path URL or path to sanitize
      */
     sanitizeFsUrl(path: string): SafeUrl {
@@ -258,9 +268,9 @@ export class FileSystemService {
      * @param path Path to list files for. Defaults to '.'
      * @returns Promise that resolves to array of FileEntry objects for the directory
      */
-    async ls(path: string = '.'): Promise<any[]> {
-        return new Promise<any[]>((resolve, reject) => {
-            this.filer.ls(path, (entries) => {
+    async ls(path: string = '.'): Promise<FileSystemEntry[]> {
+        return new Promise<FileSystemEntry[]>((resolve, reject) => {
+            this.filer.ls(path, (entries: FileSystemEntry[]) => {
 
                 // Update subscribers if we're listing the cwd
                 if (this.pathIsCwd(path)) {
@@ -305,8 +315,8 @@ export class FileSystemService {
      * @param path Relative or absolute filepath
      * @return Promise which resolves to the DirectoryEntry for path
      */
-    async cd(path: string): Promise<any> {
-        return new Promise((resolve, reject) => {
+    async cd(path: string): Promise<FileSystemDirectoryEntry> {
+        return new Promise<FileSystemDirectoryEntry>((resolve, reject) => {
             this.filer.cd(path, (dirEntry) => {
                 // Update the cwd and file entries
                 this.updateCwd();
@@ -346,8 +356,8 @@ export class FileSystemService {
      * @param errorOnExists Reject if the directory already exists. Defaults false
      * @return Promise which resolves to DirectoryEntry for path
      */
-    async mkdir(path: string, errorOnExists: boolean = false): Promise<any> {
-        return new Promise((resolve, reject) => {
+    async mkdir(path: string, errorOnExists: boolean = false): Promise<FileSystemDirectoryEntry> {
+        return new Promise<FileSystemDirectoryEntry>((resolve, reject) => {
             this.filer.mkdir(path, errorOnExists, (dirEntry) => {
                 this.logServ.debug(`mkdir: Created directory ${path}.`);
 
@@ -394,8 +404,8 @@ export class FileSystemService {
      * @param newName New name under which to write file
      * @return Promise which resolves to FileEntry of destination file
      */
-    async cp(src: string, dest: string, newName: string = null): Promise<any> {
-        return new Promise((resolve, reject) => {
+    async cp(src: string, dest: string, newName: string = null): Promise<FileSystemEntry> {
+        return new Promise<FileSystemEntry>((resolve, reject) => {
             this.filer.cp(src, dest, newName, (entry) => {
                 this.logServ.debug(`cp: Copied ${src} to ${dest}/${newName}.`);
 
@@ -419,8 +429,8 @@ export class FileSystemService {
      * @param newName New name under which to write file
      * @return Promise which resolves to FileEntry of destination file
      */
-    async mv(src: string, dest: string, newName?: string): Promise<any> {
-        return new Promise((resolve, reject) => {
+    async mv(src: string, dest: string, newName?: string): Promise<FileSystemEntry> {
+        return new Promise<FileSystemEntry>((resolve, reject) => {
             this.filer.mv(src, dest, newName, (entry) => {
                 this.logServ.debug(`mv: Moved ${src} to ${dest}/${newName}.`);
 
@@ -441,8 +451,8 @@ export class FileSystemService {
      * @param path Path to open
      * @return File object of opened file
      */
-    async open(path: string): Promise<any> {
-        return new Promise((resolve, reject) => {
+    async open(path: string): Promise<File> {
+        return new Promise<File>((resolve, reject) => {
             this.filer.open(path, (file) => {
                 this.logServ.debug(`open: Opened ${path}.`);
 
@@ -461,8 +471,8 @@ export class FileSystemService {
      * @param data Object describing data to write
      * @return Promise which resolves to the FileEntry for path
      */
-    async write(path: string, data: FileSystemData): Promise<any> {
-        return new Promise(async (resolve, reject) => {
+    async write(path: string, data: FileSystemData): Promise<FileSystemEntry> {
+        return new Promise<FileSystemEntry>(async (resolve, reject) => {
 
             // Increase quota before writing if we need to
             await this.checkQuota((data.size) ? data.size : 0);

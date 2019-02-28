@@ -1,7 +1,9 @@
 import { Component, OnInit, NgZone } from '@angular/core';
 import { FileSystemService } from 'src/app/_services/file-system.service';
+import { FileSystemEntry } from 'src/app/_models/file-system-entry';
 import { LogService } from 'src/app/_services/log.service';
 import { debounceTime } from 'rxjs/operators';
+import { FileSystemDirectoryEntry } from 'src/app/_models/file-system-directory-entry';
 
 @Component({
     selector: 'app-file-list',
@@ -10,7 +12,7 @@ import { debounceTime } from 'rxjs/operators';
 })
 export class FileListComponent implements OnInit {
 
-    private entries: any[];
+    private entries: FileSystemEntry[];
 
     constructor(
         private fss: FileSystemService,
@@ -22,12 +24,11 @@ export class FileListComponent implements OnInit {
         this.fss.cwdFileList$
         .pipe()
         .subscribe((entries) => {
-            this.logServ.debug(`FileListComp: File list re-render triggered.`);
+            this.logServ.debug(`FileListComp: Re-render triggered.`);
 
             this.ngZone.run(() => {
                 this.entries = entries;
             });
         });
     }
-
 }
