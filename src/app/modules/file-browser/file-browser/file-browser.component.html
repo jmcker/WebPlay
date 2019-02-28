@@ -1,6 +1,13 @@
 <app-filepath-display></app-filepath-display>
 <app-usage-display></app-usage-display>
 
-<app-file-list></app-file-list>
+<app-file-list
+    (select)="select($event)"
+    (preview)="preview($event)"
+    (launch)="launch($event)"
+    (zipDownload)="createAndDownloadZip($event)"
+    (rename)="rename($event)"
+    (delete)="delete($event)"
+></app-file-list>
 <app-file-preview *ngIf="previewing"></app-file-preview>
 <app-file-upload></app-file-upload>

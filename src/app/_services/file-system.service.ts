@@ -100,7 +100,7 @@ export class FileSystemService {
 
             // If we're already done
             if (this.filer !== null && this.filer.isOpen) {
-                this.logServ.debug('init: Filesystem already initialized.');
+                this.logServ.debug('init:\t Filesystem already initialized.');
 
                 resolve(this.filer.fs);
             }
@@ -110,7 +110,7 @@ export class FileSystemService {
                 persistent: true,
                 size: this.FS_INIT_CAPACITY
             }, (fs) => {
-                this.logServ.debug(`init: Opened FileSystem: ${fs.name}.`);
+                this.logServ.debug(`init:\t Opened FileSystem: ${fs.name}.`);
 
                 this.updateCwd();
                 this.updateCwdFileList();
@@ -153,7 +153,7 @@ export class FileSystemService {
      * @param path Path of file or directory as filesystem URL
      */
     dirname(path: string) {
-        this.logServ.debug(`dirname: Original ${path}`);
+        this.logServ.debug(`dirname:\t Original ${path}`);
 
         let parts = path.split('/');
         parts.pop();
@@ -161,13 +161,13 @@ export class FileSystemService {
         // Take care of relative paths
         if (parts[0] === '.') {
             parts[0] = this.filer.cwd.fullPath;
-            this.logServ.debug(`dirname: Expanded . to ${parts[0]}`);
+            this.logServ.debug(`dirname:\t Expanded . to ${parts[0]}`);
         } else if (parts[0] === '..') {
             parts[0] = '/' + this.dirname(this.filer.cwd.fullPath);
-            this.logServ.debug(`dirname: Expanded .. to ${parts[0]}`);
+            this.logServ.debug(`dirname:\t Expanded .. to ${parts[0]}`);
         }
 
-        this.logServ.debug(`dirname: Final ${parts.join('/')}`);
+        this.logServ.debug(`dirname:\t Final ${parts.join('/')}`);
 
         return parts.join('/');
     }
@@ -185,7 +185,7 @@ export class FileSystemService {
 
         // Convert to a filesystem URL
         path = this.filer.pathToFilesystemURL(path);
-        // this.logServ.debug(`pathIsCwd: Compare path: ${path} to ${this.cwdSubject.value}`);
+        // this.logServ.debug(`pathIsCwd:\t Compare path: ${path} to ${this.cwdSubject.value}`);
 
         return path === this.cwdSubject.value;
     }
@@ -250,10 +250,10 @@ export class FileSystemService {
     async increaseQuota(bytes: number): Promise<number> {
         return new Promise<number>((resolve, reject) => {
             navigator.webkitPersistentStorage.requestQuota(this.usageSubject.value.capacity + bytes, (grantedBytes) => {
-                this.logServ.debug(`quota: Filesystem expanded to: ${this.toMB(grantedBytes)} MB`);
+                this.logServ.debug(`quota:\t Filesystem expanded to: ${this.toMB(grantedBytes)} MB`);
 
                 this.updateUsage();
-                this.logServ.debug(`quota: Received ${grantedBytes} bytes.`);
+                this.logServ.debug(`quota:\t Received ${grantedBytes} bytes.`);
                 resolve(grantedBytes);
             }, (e) => {
                 this.logServ.error(e, `Quota increase failed.`);
@@ -339,10 +339,10 @@ export class FileSystemService {
     async exists(path: string): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
             this.filer.exists(path, () => {
-                this.logServ.debug(`exists: File ${path} already exists.`);
+                this.logServ.debug(`exists:\t File ${path} already exists.`);
                 resolve(true);
             }, () => {
-                this.logServ.debug(`exists: File ${path} did not exist.`);
+                this.logServ.debug(`exists:\t File ${path} did not exist.`);
                 resolve(false);
             });
         });
@@ -359,7 +359,7 @@ export class FileSystemService {
     async mkdir(path: string, errorOnExists: boolean = false): Promise<FileSystemDirectoryEntry> {
         return new Promise<FileSystemDirectoryEntry>((resolve, reject) => {
             this.filer.mkdir(path, errorOnExists, (dirEntry) => {
-                this.logServ.debug(`mkdir: Created directory ${path}.`);
+                this.logServ.debug(`mkdir:\t Created directory ${path}.`);
 
                 // Update the file list as we may have modified the cwd
                 this.updateCwdFileList();
@@ -382,7 +382,7 @@ export class FileSystemService {
     async rm(path: string): Promise<boolean> {
         return new Promise<boolean>((resolve, reject) => {
             this.filer.rm(path, () => {
-                this.logServ.debug(`rm: Removed ${path} from filesystem.`);
+                this.logServ.debug(`rm:\t Removed ${path} from filesystem.`);
 
                 // Update the file list as we may have modified the cwd
                 this.updateCwdFileList();
@@ -407,7 +407,7 @@ export class FileSystemService {
     async cp(src: string, dest: string, newName: string = null): Promise<FileSystemEntry> {
         return new Promise<FileSystemEntry>((resolve, reject) => {
             this.filer.cp(src, dest, newName, (entry) => {
-                this.logServ.debug(`cp: Copied ${src} to ${dest}/${newName}.`);
+                this.logServ.debug(`cp:\t Copied ${src} to ${dest}/${newName}.`);
 
                 // Update the file list as we may have modified the cwd
                 this.updateCwdFileList();
@@ -432,7 +432,7 @@ export class FileSystemService {
     async mv(src: string, dest: string, newName?: string): Promise<FileSystemEntry> {
         return new Promise<FileSystemEntry>((resolve, reject) => {
             this.filer.mv(src, dest, newName, (entry) => {
-                this.logServ.debug(`mv: Moved ${src} to ${dest}/${newName}.`);
+                this.logServ.debug(`mv:\t Moved ${src} to ${dest}/${newName}.`);
 
                 // Update the file list as we may have modified the cwd
                 this.updateCwdFileList();
@@ -454,7 +454,7 @@ export class FileSystemService {
     async open(path: string): Promise<File> {
         return new Promise<File>((resolve, reject) => {
             this.filer.open(path, (file) => {
-                this.logServ.debug(`open: Opened ${path}.`);
+                this.logServ.debug(`open:\t Opened ${path}.`);
 
                 resolve(file);
             }, (e) => {
@@ -482,17 +482,17 @@ export class FileSystemService {
                 let confirm = await this.logServ.confirm(`${path} already exists. Would you like to overwrite?`);
 
                 if (!confirm) {
-                    this.logServ.debug(`write: Declined overwrite of ${path}`);
+                    this.logServ.debug(`write:\t Declined overwrite of ${path}`);
                     reject('Overwrite cancelled.');
                     return;
                 } else {
-                    this.logServ.debug(`write: Accepted overwrite of ${path}`);
+                    this.logServ.debug(`write:\t Accepted overwrite of ${path}`);
                 }
             }
 
             // Continue with normal write
             this.filer.write(path, data, (fileEntry, fileWriter) => {
-                this.logServ.debug(`write: File ${path} was added to storage.`);
+                this.logServ.debug(`write:\t File ${path} was added to storage.`);
 
                 // Update the file list as we may have modified the cwd
                 this.updateCwdFileList();

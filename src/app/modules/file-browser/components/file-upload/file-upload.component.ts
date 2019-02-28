@@ -69,7 +69,7 @@ export class FileUploadComponent implements OnInit {
         for (let i = 0; i < files.length; i++) {
             // Create parent folder and any subfolders
             let parentPath = this.fss.dirname(files[i].webkitRelativePath);
-            this.logServ.debug(`Creating parent folders: ${parentPath}`);
+            this.logServ.debug(`FileUploadComp:\t Creating parent path ${parentPath}`);
             await this.fss.mkdir(parentPath);
 
             this.logServ.debug(`Writing file ${files[i].webkitRelativePath}`);
