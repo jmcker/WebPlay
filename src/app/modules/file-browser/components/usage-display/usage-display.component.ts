@@ -11,7 +11,7 @@ import { FileSystemUsage } from 'src/app/_models/file-system-usage';
 })
 export class UsageDisplayComponent implements OnInit {
 
-    private usage: FileSystemUsage;
+    public usage: FileSystemUsage;
 
     constructor(
         private fss: FileSystemService,

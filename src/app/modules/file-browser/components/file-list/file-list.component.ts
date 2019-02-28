@@ -45,10 +45,10 @@ export class FileListComponent implements OnInit {
      */
     @Output() delete = new EventEmitter<FileSystemEntry>();
 
-    private entries: FileSystemEntry[];
+    public entries: FileSystemEntry[];
 
     constructor(
-        private fss: FileSystemService,
+        public fss: FileSystemService,
         private logServ: LogService,
         private ngZone: NgZone
     ) { }

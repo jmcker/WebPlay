@@ -24,7 +24,7 @@ export class FileBrowserComponent implements OnInit {
     @Output() selected = new EventEmitter<string>();
 
     private _mode: FileBrowserMode = FileBrowserMode.BROWSE;
-    private previewing: boolean = false;
+    public previewing: boolean = false;
 
     constructor(
         private logServ: LogService,

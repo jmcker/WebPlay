@@ -9,7 +9,7 @@ import { FileSystemService } from 'src/app/_services/file-system.service';
 })
 export class FilepathDisplayComponent implements OnInit {
 
-    private cwd: string;
+    public cwd: string;
 
     constructor(
         private fss: FileSystemService,
