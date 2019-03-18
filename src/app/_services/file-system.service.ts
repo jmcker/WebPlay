@@ -150,7 +150,7 @@ export class FileSystemService {
     /**
      * Parse the parent folder for a file or directory from a path.
      *
-     * @param path Path of file or directory as filesystem URL
+     * @param path Path of file or directory (relative or absolute)
      */
     dirname(path: string) {
         this.logServ.debug(`dirname:\t Original ${path}`);
@@ -170,6 +170,23 @@ export class FileSystemService {
         this.logServ.debug(`dirname:\t Final ${parts.join('/')}`);
 
         return parts.join('/');
+    }
+
+    /**
+     * Parse the base file or directory name from a path.
+     *
+     * Based on: https://stackoverflow.com/a/29939805/6798110
+     *
+     * @param path Path of file or directory (relative or absolute)
+     */
+    basename(path: string, sep: string = '/') {
+        this.logServ.debug(`basename:\t Original ${path}`);
+
+        let name = path.substr(path.lastIndexOf(sep) + 1);
+
+        this.logServ.debug(`basename:\t Final ${name}`);
+
+        return name;
     }
 
     /**

@@ -85,13 +85,15 @@ export class LogService {
      * @param msg Prompt to display
      * @return Promise which resolves to result of window.prompt
      */
-    prompt(msg: string): Promise<string> {
+    prompt(msg: string, _default?: string): Promise<string> {
         return new Promise((resolve, reject) => {
-            let res = window.prompt(msg, '');
+            let res = window.prompt(msg, _default);
 
+            /* Resolve with null on Cancel instead of rejecting
             if (isNull(res)) {
                 reject('Cancel button was clicked');
             }
+            */
 
             resolve(res);
         });

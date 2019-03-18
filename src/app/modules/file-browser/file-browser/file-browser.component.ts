@@ -3,6 +3,8 @@ import { FileSystemEntry } from 'src/app/_models/file-system-entry';
 import { FileSystemDirectoryEntry } from 'src/app/_models/file-system-directory-entry';
 import { LogService } from 'src/app/_services/log.service';
 import { FileBrowserMode } from 'src/app/_models/file-browser-mode.enum';
+import { isNull } from 'util';
+import { FileSystemService } from '@app/_services/file-system.service';
 
 @Component({
     selector: 'app-file-browser',
@@ -17,17 +19,27 @@ export class FileBrowserComponent implements OnInit {
         } else if (value === "SELECT") {
             this._mode = FileBrowserMode.SELECT;
         } else {
-            this.logServ.debug(`FileBrowserComp:\t Unknown mode input: ${value}`);
+            this.logServ.error(`FileBrowserComp:\t Unknown mode input: ${value}`);
             this._mode = FileBrowserMode.BROWSE;
         }
     };
     @Output() selected = new EventEmitter<string>();
 
+    /**
+     * Enum indicating whether the file browser is in browsing mode
+     * or selection mode.
+     */
     private _mode: FileBrowserMode = FileBrowserMode.BROWSE;
+
+    /**
+     * Boolean indicating/controlling whether or not the preview
+     * window is visible.
+     */
     public previewing: boolean = false;
 
     constructor(
         private logServ: LogService,
+        private fss: FileSystemService
     ) { }
 
     ngOnInit() {
@@ -96,9 +108,18 @@ export class FileBrowserComponent implements OnInit {
      *
      * @param entry FileEntry to be renamed
      */
-    rename(entry: FileSystemEntry) {
+    async rename(entry: FileSystemEntry) {
         this.logServ.debug('FileBrowserComp:\t Rename event received.');
 
+        let newName = await this.logServ.prompt('Enter a new path (this can be used to move files between directories):', entry.name);
+
+        if (isNull(newName)) {
+            return;
+        }
+
+        // TODO: Develop less hackish way to move files between directories
+        // Relies on user to type directory and name and cannot accomodate \ instead of /
+        this.fss.mv(entry.name, this.fss.dirname(newName), this.fss.basename(newName));
     }
 
     /**
@@ -106,9 +127,14 @@ export class FileBrowserComponent implements OnInit {
      *
      * @param entry FileEntry to be deleted
      */
-    delete(entry: FileSystemEntry) {
+    async delete(entry: FileSystemEntry) {
         this.logServ.debug('FileBrowserComp:\t Delete event received.');
 
+        let conf = await this.logServ.confirm(`Are you sure you want to delete '${entry.name}'?\nThis action cannot be undone.`);
+
+        if (conf) {
+            this.fss.rm(entry.fullPath);
+        }
     }
 
 }
