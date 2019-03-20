@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
-import Filer from 'src/app/ext/filer.js';
-import Util from 'src/app/ext/filer.js';
+import Filer from '@app/ext/filer.js';
+import Util from '@app/ext/filer.js';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { FileSystemUsage } from '../_models/file-system-usage';
 import { LogService } from './log.service';
@@ -79,15 +79,21 @@ export class FileSystemService {
      */
     public util = null;
 
+    /**
+     * This Promise should be awaited before trying to
+     * access the filesytem.
+     */
+    public initPromise: Promise<FileSystem>;
+
     constructor(
         private logServ: LogService,
-        public sanitizer: DomSanitizer
+        private sanitizer: DomSanitizer
     ) {
         this.filer = new Filer();
         this.util = new Util();
         logServ.debug(this.filer);
 
-        this.init();
+        this.initPromise = this.init();
     }
 
     /**

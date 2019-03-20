@@ -5,10 +5,6 @@ import { FilePreviewComponent } from './components/file-preview/file-preview.com
 
 const routes: Routes = [
     {
-        path: 'preview',
-        component: FilePreviewComponent
-    },
-    {
         path: '',
         component: FileBrowserComponent
     }

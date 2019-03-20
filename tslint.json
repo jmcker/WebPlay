@@ -83,6 +83,15 @@
             "check-else",
             "check-whitespace"
         ],
+        "ordered-imports": [
+            true,
+            {
+                "grouped-imports": true,
+                "import-sources-order": "lowercase-last",
+                "named-imports-order": "lowercase-first",
+                "module-source-path": "full"
+            }
+        ],
         "prefer-const": true,
         "quotemark": [
             true,

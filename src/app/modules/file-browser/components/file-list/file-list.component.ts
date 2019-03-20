@@ -1,9 +1,9 @@
 import { Component, OnInit, NgZone, Output, EventEmitter } from '@angular/core';
-import { FileSystemService } from 'src/app/_services/file-system.service';
-import { FileSystemEntry } from 'src/app/_models/file-system-entry';
-import { LogService } from 'src/app/_services/log.service';
+import { FileSystemService } from '@app/_services/file-system.service';
+import { FileSystemEntry } from '@app/_models/file-system-entry';
+import { LogService } from '@app/_services/log.service';
 import { debounceTime } from 'rxjs/operators';
-import { FileSystemDirectoryEntry } from 'src/app/_models/file-system-directory-entry';
+import { FileSystemDirectoryEntry } from '@app/_models/file-system-directory-entry';
 
 /**
  * Paired info for the rename event.

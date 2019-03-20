@@ -1,7 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { FileSystemService } from 'src/app/_services/file-system.service';
-import { LogService } from 'src/app/_services/log.service';
-import { WebkitFile } from 'src/app/_models/webkit-file';
+import { FileSystemService } from '@app/_services/file-system.service';
+import { LogService } from '@app/_services/log.service';
+import { WebkitFile } from '@app/_models/webkit-file';
 
 @Component({
     selector: 'app-file-upload',

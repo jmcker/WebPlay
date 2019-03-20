@@ -1,10 +1,11 @@
-import { Component, OnInit, Input, Output, EventEmitter } from '@angular/core';
-import { FileSystemEntry } from 'src/app/_models/file-system-entry';
-import { FileSystemDirectoryEntry } from 'src/app/_models/file-system-directory-entry';
-import { LogService } from 'src/app/_services/log.service';
-import { FileBrowserMode } from 'src/app/_models/file-browser-mode.enum';
+import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core';
+import { FileSystemEntry } from '@app/_models/file-system-entry';
+import { FileSystemDirectoryEntry } from '@app/_models/file-system-directory-entry';
+import { LogService } from '@app/_services/log.service';
+import { FileBrowserMode } from '@app/_models/file-browser-mode.enum';
 import { isNull } from 'util';
 import { FileSystemService } from '@app/_services/file-system.service';
+import { ActivatedRoute, Router } from '@angular/router';
 
 @Component({
     selector: 'app-file-browser',
@@ -39,11 +40,16 @@ export class FileBrowserComponent implements OnInit {
 
     constructor(
         private logServ: LogService,
-        private fss: FileSystemService
+        private fss: FileSystemService,
+        private router: Router,
+        private route: ActivatedRoute
     ) { }
 
-    ngOnInit() {
+    async ngOnInit() {
         this.logServ.debug(`FileBrowserComp:\t Mode is ${this._mode}`);
+
+        // Make sure filesystem is good to go
+        await this.fss.initPromise;
     }
 
     /**

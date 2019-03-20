@@ -1,8 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { FileSystemService } from 'src/app/_services/file-system.service';
+import { FileSystemService } from '@app/_services/file-system.service';
 import { Observable } from 'rxjs';
-import { LogService } from 'src/app/_services/log.service';
-import { FileSystemUsage } from 'src/app/_models/file-system-usage';
+import { LogService } from '@app/_services/log.service';
+import { FileSystemUsage } from '@app/_models/file-system-usage';
 
 @Component({
     selector: 'app-usage-display',

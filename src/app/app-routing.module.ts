@@ -1,7 +1,12 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 
+// TODO: routes with names do not currently work
 const routes: Routes = [
+    {
+        path: 'browse/:name',
+        loadChildren: './modules/file-browser/file-browser.module#FileBrowserModule'
+    },
     {
         path: 'browse',
         loadChildren: './modules/file-browser/file-browser.module#FileBrowserModule'
@@ -9,6 +14,10 @@ const routes: Routes = [
     {
         path: 'live',
         loadChildren: './modules/live-production/live-production.module#LiveProductionModule'
+    },
+    {
+        path: 'productions/:name',
+        loadChildren: './modules/production-menu/production-menu.module#ProductionMenuModule'
     },
     {
         path: 'productions',

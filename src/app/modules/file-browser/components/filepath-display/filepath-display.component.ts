@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { LogService } from 'src/app/_services/log.service';
-import { FileSystemService } from 'src/app/_services/file-system.service';
+import { LogService } from '@app/_services/log.service';
+import { FileSystemService } from '@app/_services/file-system.service';
 
 @Component({
     selector: 'app-filepath-display',
