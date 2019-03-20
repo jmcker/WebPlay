@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductionMenuRoutingModule } from './production-menu-routing.module';
 import { FileBrowserModule } from '@app/modules/file-browser/file-browser.module'
+import { SharedModule } from '@app/shared/shared.module';
 
 import { ProductionMenuComponent } from './production-menu/production-menu.component';
 import { MenuBarComponent } from './components/menu-bar/menu-bar.component';
@@ -11,7 +12,8 @@ import { MenuBarComponent } from './components/menu-bar/menu-bar.component';
     imports: [
         CommonModule,
         ProductionMenuRoutingModule,
-        FileBrowserModule
+        FileBrowserModule,
+        SharedModule
     ]
 })
 export class ProductionMenuModule { }
