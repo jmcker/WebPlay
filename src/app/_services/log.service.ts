@@ -1,11 +1,20 @@
 import { Injectable } from '@angular/core';
 import { environment } from 'src/environments/environment';
 import { isNull } from 'util';
+import { ReplaySubject } from 'rxjs';
+import { OnscreenLog } from '@app/_models/onscreen-log';
 
 @Injectable({
     providedIn: 'root'
 })
 export class LogService {
+
+    readonly MAX_REPLAY_WINDOW = 5;
+
+    /**
+     * List of last 50 info and alert messages.
+     */
+    public msgList$ = new ReplaySubject<OnscreenLog>(50, this.MAX_REPLAY_WINDOW * 1000);
 
     constructor() {
         if (environment.production) {
@@ -44,10 +53,8 @@ export class LogService {
      * @param msg Message to display
      */
     info(msg: string) {
-        // TODO: check if alert bar is present before resorting to window.alert()
-
         console.log(msg);
-        window.alert(msg);
+        this.msgList$.next({ text: msg, color: 'black' });
     }
 
     /**
@@ -58,10 +65,8 @@ export class LogService {
      * @param msg Message to display
      */
     alert(msg: string) {
-        // TODO: check if alert bar is present before resorting to window.alert()
-
         console.warn(msg);
-        window.alert(msg);
+        this.msgList$.next({ text: msg, color: 'red' });
     }
 
     /**

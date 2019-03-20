@@ -538,6 +538,7 @@ export class FileSystemService {
      * @param name Name of output zip. Defaults to directory name
      */
     async downloadAsZip(dir: FileSystemDirectoryEntry, name: string = dir.name) {
+        this.logServ.info('Zipping files...');
         this.logServ.debug(`zip:\t Creating zip with name ${name}...`);
 
         let promises = [];
@@ -564,7 +565,7 @@ export class FileSystemService {
                 writer.write(content);
 
                 writer.close();
-                console.log("Downloaded zip");
+                this.logServ.info('Zip download started.');
             });
         });
     }

@@ -46,21 +46,6 @@ h2 {
         display: inline;
     }
 
-.alert-container {
-    position: absolute;
-    left: 50%;
-    bottom: 0;
-    margin-bottom: 10px;
-    z-index: 5;
-}
-
-.alert-bar {
-    position: relative;
-    left: -50%;
-    color: red;
-    background-color: lightgray;
-}
-
 .global-control-box {
     position: absolute;
     right: 15px;
@@ -103,16 +88,16 @@ h2 {
         outline: 1px solid black;
         border-collapse: collapse;
     }
-    
+
     table.cue-list th {
         font-size: .75em;
         padding: 0 10px 0 10px;
     }
-    
+
     table.cue-list td {
         font-size: .6em;
     }
-    
+
     table.cue-list input {
         font-family: inherit;
         max-width: 140px;
@@ -146,7 +131,7 @@ h2 {
 }
 
 .deselected {
-    
+
 }
 
 .audio {
@@ -162,15 +147,15 @@ h2 {
 }
 
 .control {
-    
+
 }
 
 .image {
-    
+
 }
 
 .video {
-    
+
 }
 
 .desc-container {
@@ -194,7 +179,7 @@ h2 {
 }
 
 .hkey {
-    
+
 }
 
 .notes {
@@ -347,7 +332,7 @@ h2 {
 }
 
 .edit-fade-loop-box {
-    
+
 }
 
 .edit-position-box {

@@ -1,0 +1,11 @@
+.alert-container {
+    position: absolute;
+    width: 98%;
+    bottom: 0;
+    margin-bottom: 10px;
+}
+
+.alert-bar {
+    text-align: center;
+    background-color: lightgray;
+}

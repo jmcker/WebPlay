@@ -4,6 +4,8 @@
         <h1><span id="display_title" class="visible">Production Menu</span></h1>
     </div>
 
+    <app-alert-bar></app-alert-bar>
+
     <app-menu-bar
         (newProduction)="fileBrowser.newProduction()"
         (newFolder)="fileBrowser.newFolder()"
@@ -11,8 +13,6 @@
         (uploadFolder)="fileBrowser.fileUpload.openFolderDialog()"
         (uploadZip)="fileBrowser.fileUpload.openZipDialog()"
     ></app-menu-bar>
-
-    <app-alert-bar></app-alert-bar>
 
 </div>
 
