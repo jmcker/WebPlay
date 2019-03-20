@@ -23,34 +23,34 @@
                     <a href="javascript:void(0);" (click)="fss.cd(entry.name)">{{ entry.name }}</a>
                 </td>
                 <td>
-                    <a href="javascript:void(0);" (click)="doLaunch(entry)">Launch Show</a>
+                    <a href="javascript:void(0);" (click)="launch.emit(entry)">Launch Show</a>
                 </td>
                 <td>
-                    <a href="javascript:void(0);" (click)="doRename(entry)">Rename</a>
+                    <a href="javascript:void(0);" (click)="rename.emit(entry)">Rename</a>
                 </td>
                 <td>
-                    <a href="javascript:void(0);" (click)="doDownload(entry)">Download</a>
+                    <a href="javascript:void(0);" (click)="zipDownload.emit(entry)">Download</a>
                 </td>
                 <td>
                 </td>
                 <td>
-                    <a href="javascript:void(0);" (click)="doDelete(entry)">Delete</a>
+                    <a href="javascript:void(0);" (click)="delete.emit(entry)">Delete</a>
                 </td>
             </ng-template>
 
             <!-- Files -->
             <ng-template #isFile>
                 <td>
-                    <img src="assets/img/file.png" class="icon" (click)="doSelect(entry)" alt="[file icon]">
+                    <img src="assets/img/file.png" class="icon" (click)="select.emit(entry)" alt="[file icon]">
                 </td>
                 <td class="prod-name">
-                    <a href="javascript:void(0);" (click)="doSelect(entry)">{{ entry.name }}</a>
+                    <a href="javascript:void(0);" (click)="select.emit(entry)">{{ entry.name }}</a>
                 </td>
                 <td>
-                    <a href="javascript:void(0);" (click)="doPreview(entry)">Preview</a>
+                    <a href="javascript:void(0);" (click)="preview.emit(entry)">Preview</a>
                 </td>
                 <td>
-                    <a href="javascript:void(0);" (click)="doRename(entry)">Rename</a>
+                    <a href="javascript:void(0);" (click)="rename.emit(entry)">Rename</a>
                 </td>
                 <td>
                     <a [href]="fss.sanitizeFsUrl(entry.toURL())" download>Download</a>
@@ -58,7 +58,7 @@
                 <td>
                 </td>
                 <td>
-                    <a href="javascript:void(0);" (click)="doDelete(entry)">Delete</a>
+                    <a href="javascript:void(0);" (click)="delete.emit(entry)">Delete</a>
                 </td>
             </ng-template>
         </tr>
