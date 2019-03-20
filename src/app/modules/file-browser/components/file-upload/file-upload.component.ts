@@ -52,7 +52,7 @@ export class FileUploadComponent implements OnInit {
         let promises = [];
 
         for (let i = 0; i < files.length; i++) {
-            this.logServ.debug(`Writing file ${files[i].name}...`);
+            this.logServ.debug(`FileUploadComp:\t Writing file ${files[i].name}...`);
             promises.push(this.fss.write(files[i].name, { isFile: true, data: files[i], type: files[i].type, size: files[i].size }));
         }
 
@@ -63,7 +63,7 @@ export class FileUploadComponent implements OnInit {
         .catch((e) => {
             // Each file will individually print an error if it fails
             // This isn't really helpful as a summary since it fails fast on the first issue
-            this.logServ.debug('1 or more files were not stored.');
+            this.logServ.debug('FileUploadComp:\t 1 or more files were not stored.');
         });
     }
 
@@ -81,7 +81,7 @@ export class FileUploadComponent implements OnInit {
             this.logServ.debug(`FileUploadComp:\t Creating parent path ${parentPath}`);
             await this.fss.mkdir(parentPath);
 
-            this.logServ.debug(`Writing file ${files[i].webkitRelativePath}`);
+            this.logServ.debug(`FileUploadComp:\t Writing file ${files[i].webkitRelativePath}`);
             promises.push(this.fss.write(files[i].webkitRelativePath, { isFile: true, data: files[i], type: files[i].type, size: files[i].size }));
         }
 
@@ -92,7 +92,7 @@ export class FileUploadComponent implements OnInit {
         .catch((e) => {
             // Each file will individually print an error if it fails
             // This isn't really helpful as a summary since it fails fast on the first issue
-            this.logServ.debug('1 or more files were not stored.');
+            this.logServ.debug('FileUploadComp:\t 1 or more files were not stored.');
         });
     }
 }

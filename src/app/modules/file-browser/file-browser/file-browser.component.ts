@@ -109,6 +109,7 @@ export class FileBrowserComponent implements OnInit {
     createAndDownloadZip(dir: FileSystemDirectoryEntry) {
         this.logServ.debug('FileBrowserComp:\t Download zip event received.');
 
+        this.fss.downloadAsZip(dir);
     }
 
     /**

@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 
 import Filer from '@app/ext/filer.js';
 import Util from '@app/ext/filer.js';
+import JSZip from 'jszip/dist/jszip.js';
+import streamSaver from 'streamsaver/StreamSaver.js'
 import { BehaviorSubject, Subject } from 'rxjs';
 import { FileSystemUsage } from '../_models/file-system-usage';
 import { LogService } from './log.service';
@@ -10,6 +12,7 @@ import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { FileSystemEntry } from '../_models/file-system-entry';
 import { FileSystem } from '../_models/file-system';
 import { FileSystemDirectoryEntry } from '../_models/file-system-directory-entry';
+import { WriteVarExpr } from '@angular/compiler';
 
 declare global {
     interface Navigator {
@@ -91,7 +94,6 @@ export class FileSystemService {
     ) {
         this.filer = new Filer();
         this.util = new Util();
-        logServ.debug(this.filer);
 
         this.initPromise = this.init();
     }
@@ -529,4 +531,72 @@ export class FileSystemService {
         });
     }
 
+    /**
+     * Zip the contents of a folder using JZip and download it.
+     *
+     * @param dir Directory to be zipped
+     * @param name Name of output zip. Defaults to directory name
+     */
+    async downloadAsZip(dir: FileSystemDirectoryEntry, name: string = dir.name) {
+        this.logServ.debug(`zip:\t Creating zip with name ${name}...`);
+
+        let promises = [];
+        let zip = new JSZip();
+        await this.addEntryToZip(zip, dir, promises, true);
+
+        console.log('zip:\t Promise list -- ');
+        console.dir(promises);
+
+        // Wait for all files to open and add
+        Promise.all(promises)
+        .then(() => {
+            this.logServ.debug(`zip:\t File list --`);
+            this.logServ.debug(zip.files);
+
+            zip.generateAsync({
+                type: "uint8array",
+                streamFiles: false
+            }).then((content) => {
+                // Start a download straight to disk using StreamSaver.js
+                let fileStream = streamSaver.createWriteStream(`${name}.zip`);
+                let writer = fileStream.getWriter();
+
+                writer.write(content);
+
+                writer.close();
+                console.log("Downloaded zip");
+            });
+        });
+    }
+
+    /**
+     * Add a file or directory using JSZip.
+     * Directories will be added recursively.
+     *
+     * @param zip Root JSZip object
+     * @param entry FileSystemEntry to add
+     * @param topLevel Control whether the top level directory is created within the zip
+     */
+    async addEntryToZip(parent, entry: FileSystemEntry, promises: Promise<File>[], topLevel: boolean = false) {
+        if (entry.isFile) {
+            this.logServ.debug(`zip:\t Added file ${entry.fullPath}`);
+
+            let filePromise = this.open(entry.fullPath);
+            promises.push(filePromise);
+            parent.file(entry.name, filePromise);
+        }
+
+        if (entry.isDirectory) {
+            this.logServ.debug(`zip:\t Found subfolder ${entry.fullPath}`);
+
+            if (!topLevel) {
+                parent = parent.folder(entry.name);
+            }
+
+            let fileList = await this.ls(this.filer.pathToFilesystemURL(entry.fullPath));
+            for (let i = 0; i < fileList.length; i++) {
+                await this.addEntryToZip(parent, fileList[i], promises);
+            }
+        }
+    }
 }
