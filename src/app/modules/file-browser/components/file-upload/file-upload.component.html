@@ -1,5 +1,6 @@
 <!-- Hidden -->
-<div class="">
+<div class="hidden">
     <input type="file" #file (change)="onFilesAdded()" multiple>
     <input type="file" #folder (change)="onFolderAdded()" webkitdirectory="" directory="">
+    <input type="file" #zip (change)="onFilesAdded()" accept=".zip">
 </div>

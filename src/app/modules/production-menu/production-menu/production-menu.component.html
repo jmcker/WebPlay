@@ -4,15 +4,18 @@
         <h1><span id="display_title" class="visible">Production Menu</span></h1>
     </div>
 
-    <app-menu-bar></app-menu-bar>
+    <app-menu-bar
+        (newProduction)="fileBrowser.newProduction()"
+        (newFolder)="fileBrowser.newFolder()"
+        (uploadFiles)="fileBrowser.fileUpload.openFileDialog()"
+        (uploadFolder)="fileBrowser.fileUpload.openFolderDialog()"
+        (uploadZip)="fileBrowser.fileUpload.openZipDialog()"
+    ></app-menu-bar>
 
-    <!-- Alert bart -->
-    <div id="alert_container" class="alert-container">
-        <div id="alert_bar" class="alert-bar"></div>
-    </div>
+    <app-alert-bar></app-alert-bar>
 
 </div>
 
 <br><br>
 
-<app-file-browser mode="SELECT"></app-file-browser>
+<app-file-browser #fileBrowser mode="SELECT"></app-file-browser>

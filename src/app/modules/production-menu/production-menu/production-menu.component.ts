@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { FileBrowserComponent } from '@app/modules/file-browser/file-browser/file-browser.component';
 import { FileBrowserMode } from '@app/_models/file-browser-mode.enum';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LogService } from '@app/_services/log.service';
 import { FileSystemService } from '@app/_services/file-system.service';
+import { isNull } from 'util';
 
 @Component({
     selector: 'app-production-menu',
@@ -11,6 +12,8 @@ import { FileSystemService } from '@app/_services/file-system.service';
     styleUrls: ['./production-menu.component.css']
 })
 export class ProductionMenuComponent implements OnInit {
+
+    @ViewChild('fileBrowser') fileBrowser;
 
     constructor(
         private logServ: LogService,
@@ -23,5 +26,4 @@ export class ProductionMenuComponent implements OnInit {
         // Make sure filesystem is good to go
         await this.fss.initPromise;
     }
-
 }

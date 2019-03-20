@@ -9,7 +9,9 @@
     (rename)="rename($event)"
     (delete)="delete($event)"
 ></app-file-list>
+
 <app-file-preview *ngIf="previewing"
     (close)="endPreview($event)"
 ></app-file-preview>
-<app-file-upload></app-file-upload>
+
+<app-file-upload #fileUpload></app-file-upload>

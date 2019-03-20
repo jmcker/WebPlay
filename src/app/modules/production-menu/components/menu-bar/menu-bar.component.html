@@ -1,9 +1,10 @@
 <!-- Menu buttons -->
 <nav class="menu-button-box">
     <ul>
-        <li><a href="javascript:void(0);" onclick="createProd()">New Production</a></li>
-        <li><a href="javascript:void(0);" onclick="refreshFolder()">Refresh Folder</a></li>
-        <li><a href="javascript:void(0);" onclick="uploadFile()">Upload Files</a></li>
-        <li><a href="javascript:void(0);" onclick="uploadProd()">Upload Show</a></li>
+        <li><a href="javascript:void(0);" (click)="newProduction.emit()">New Production</a></li>
+        <li><a href="javascript:void(0);" (click)="newFolder.emit()">New Folder</a></li>
+        <li><a href="javascript:void(0);" (click)="uploadFiles.emit()">Upload Files</a></li>
+        <li><a href="javascript:void(0);" (click)="uploadFolder.emit()">Upload Folder</a></li>
+        <li><a href="javascript:void(0);" (click)="uploadZip.emit()">Upload Production</a></li>
     </ul>
 </nav>

@@ -12,6 +12,7 @@ export class FileUploadComponent implements OnInit {
 
     @ViewChild('file') fileUpload;
     @ViewChild('folder') folderUpload;
+    @ViewChild('zip') zipUpload;
 
     constructor(
         private logServ: LogService,
@@ -34,6 +35,14 @@ export class FileUploadComponent implements OnInit {
     openFolderDialog() {
         this.folderUpload.nativeElement.click();
     }
+
+    /**
+     * Open the production selection dialog
+     */
+    openZipDialog() {
+        this.zipUpload.nativeElement.click();
+    }
+
 
     /**
      * Write files to the file system once the user selects them

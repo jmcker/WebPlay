@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, Output, EventEmitter, OnDestroy } from '@angular/core';
+import { Component, OnInit, Input, Output, EventEmitter, ViewChild } from '@angular/core';
 import { FileSystemEntry } from '@app/_models/file-system-entry';
 import { FileSystemDirectoryEntry } from '@app/_models/file-system-directory-entry';
 import { LogService } from '@app/_services/log.service';
@@ -25,6 +25,8 @@ export class FileBrowserComponent implements OnInit {
         }
     };
     @Output() selected = new EventEmitter<string>();
+
+    @ViewChild('fileUpload') fileUpload;
 
     /**
      * Enum indicating whether the file browser is in browsing mode
@@ -143,4 +145,52 @@ export class FileBrowserComponent implements OnInit {
         }
     }
 
+    /**
+     * Prompt the user for a name and create a new production.
+     * Production will be created at root.
+     */
+    async newProduction() {
+        // Move to root since nested productions aren't allowed
+        await this.fss.cd('/');
+
+        let prodName = '';
+        while (prodName === '') {
+            if (document.hasFocus()) {
+                prodName = await this.logServ.prompt('Enter a name for the production:', 'New Production');
+
+                if (prodName === null) {
+                    return;
+                }
+            }
+        }
+
+        if (await this.fss.exists(prodName)) {
+            this.logServ.alert(`'${prodName} already exists.'`);
+            return;
+        }
+
+        await this.fss.mkdir(prodName);
+
+        // TODO: Initialize production file?
+        // TODO: Launch show?
+    }
+
+    /**
+     * Prompt the user for a name and create a new folder.
+     */
+    async newFolder() {
+        let folderName = await this.logServ.prompt('Enter folder name:', 'New Folder');
+
+        if (isNull(folderName)) {
+            return;
+        }
+
+        // Make sure folder doesn't already exist
+        if (await this.fss.exists(folderName)) {
+            this.logServ.alert(`'${folderName}' already exists.`);
+            return;
+        }
+
+        await this.fss.mkdir(folderName);
+    }
 }
