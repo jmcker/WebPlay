@@ -51,10 +51,11 @@ export class LogService {
      *
      * The message will also be logged to console
      * @param msg Message to display
+     * @param duration Time to show the message for. Defaults to 3
      */
-    info(msg: string) {
+    info(msg: string, duration: number = 3) {
         console.log(msg);
-        this.msgList$.next({ text: msg, color: 'black' });
+        this.msgList$.next({ text: msg, color: 'black', duration: duration });
     }
 
     /**
@@ -63,10 +64,11 @@ export class LogService {
      *
      * The message will also be logged to console
      * @param msg Message to display
+     * @param duration Time to show the message for. Defaults to 5
      */
-    alert(msg: string) {
+    alert(msg: string, duration: number = 5) {
         console.warn(msg);
-        this.msgList$.next({ text: msg, color: 'red' });
+        this.msgList$.next({ text: msg, color: 'red', duration: duration });
     }
 
     /**

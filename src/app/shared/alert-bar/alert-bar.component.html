@@ -1,8 +1,5 @@
 <!-- Alert bar -->
 <div class="alert-container">
-    <div class="alert-bar">
-        <div *ngFor="let msg of msgList" [style.color]="msg.color">
-            {{ msg.text }}
-        </div>
+    <div #alertBar class="alert-bar">
     </div>
 </div>
