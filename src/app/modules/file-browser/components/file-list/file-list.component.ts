@@ -2,7 +2,7 @@ import { Component, OnInit, NgZone, Output, EventEmitter } from '@angular/core';
 import { FileSystemService } from '@app/_services/file-system.service';
 import { FileSystemEntry } from '@app/_models/file-system-entry';
 import { LogService } from '@app/_services/log.service';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { FileSystemDirectoryEntry } from '@app/_models/file-system-directory-entry';
 
 /**

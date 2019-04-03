@@ -13,6 +13,7 @@ import { FileSystemEntry } from '../_models/file-system-entry';
 import { FileSystem } from '../_models/file-system';
 import { FileSystemDirectoryEntry } from '../_models/file-system-directory-entry';
 import { WriteVarExpr } from '@angular/compiler';
+import { reject } from 'q';
 
 declare global {
     interface Navigator {
@@ -160,10 +161,10 @@ export class FileSystemService {
      *
      * @param path Path of file or directory (relative or absolute)
      */
-    dirname(path: string) {
+    dirname(path: string, sep: string = '/') {
         this.logServ.debug(`dirname:\t Original ${path}`);
 
-        let parts = path.split('/');
+        let parts = path.split(sep);
         parts.pop();
 
         // Take care of relative paths
@@ -171,13 +172,13 @@ export class FileSystemService {
             parts[0] = this.filer.cwd.fullPath;
             this.logServ.debug(`dirname:\t Expanded . to ${parts[0]}`);
         } else if (parts[0] === '..') {
-            parts[0] = '/' + this.dirname(this.filer.cwd.fullPath);
+            parts[0] = sep + this.dirname(this.filer.cwd.fullPath);
             this.logServ.debug(`dirname:\t Expanded .. to ${parts[0]}`);
         }
 
-        this.logServ.debug(`dirname:\t Final ${parts.join('/')}`);
+        this.logServ.debug(`dirname:\t Final ${parts.join(sep)}`);
 
-        return parts.join('/');
+        return parts.join(sep);
     }
 
     /**
@@ -599,5 +600,50 @@ export class FileSystemService {
                 await this.addEntryToZip(parent, fileList[i], promises);
             }
         }
+    }
+
+    /**
+     * Process an uploaded zip using JSZip.
+     *
+     * @param jszip
+     */
+    async unzipAndUpload(zip: File) {
+        return new Promise<FileSystemDirectoryEntry>((resolve, reject) => {
+            JSZip.loadAsync(zip)
+            .then(async (jszip) => {
+
+                // Prompt until we get a good name
+                let name = this.dirname(zip.name, '.');
+                while (name.length > 0 && await this.exists(`./${name}`)) {
+                    name = await this.logServ.prompt(`'${name}' already exists.\nPlease choose a new name:`);
+
+                    if (name === null) {
+                        reject('User cancelled folder rename.');
+                        return;
+                    }
+                }
+
+                // Create root dir
+                await this.mkdir(name);
+
+                jszip.forEach(async (path, entry) => {
+
+                    let parentPath = this.dirname(path);
+                    this.logServ.debug(`unzip:\t Creating parent path ${parentPath}.`);
+                    await this.mkdir(`${name}/${parentPath}`);
+
+                    if (entry.dir === false) {
+                        this.logServ.debug(`unzip:\t Writing ${name}/${path}...`);
+
+                        let arr = await jszip.file(path).async('uint8array');
+                        this.write(`${name}/${path}`, { isFile: true, data: arr });
+                    }
+                });
+            }, (e) => {
+                this.logServ.error(e, `Could not read ${zip.name}.`);
+                reject(e);
+                return;
+            });
+        });
     }
 }

@@ -23,21 +23,21 @@ export class FileUploadComponent implements OnInit {
     }
 
     /**
-     * Open the file selection dialog
+     * Open the file selection dialog.
      */
     openFileDialog() {
         this.fileUpload.nativeElement.click();
     }
 
     /**
-     * Open the folder selection dialog
+     * Open the folder selection dialog.
      */
     openFolderDialog() {
         this.folderUpload.nativeElement.click();
     }
 
     /**
-     * Open the production selection dialog
+     * Open the production selection dialog.
      */
     openZipDialog() {
         this.zipUpload.nativeElement.click();
@@ -45,7 +45,7 @@ export class FileUploadComponent implements OnInit {
 
 
     /**
-     * Write files to the file system once the user selects them
+     * Write files to the file system once the user selects them.
      */
     onFilesAdded() {
         const files: File[] = this.fileUpload.nativeElement.files;
@@ -64,12 +64,17 @@ export class FileUploadComponent implements OnInit {
             // Each file will individually print an error if it fails
             // This isn't really helpful as a summary since it fails fast on the first issue
             this.logServ.debug('FileUploadComp:\t 1 or more files were not stored.');
+        })
+        .finally(() => {
+            // Clear the file list so that onchange will fire
+            // again even if the same file is selected
+            this.fileUpload.nativeElement.value = null;
         });
     }
 
     /**
-     * Write the files contained in a folder once the user selects them
-     * This will create the subfolder if not already present
+     * Write the files contained in a folder once the user selects them.
+     * This will create the subfolder if not already present.
      */
     async onFolderAdded() {
         const files: WebkitFile[] = this.folderUpload.nativeElement.files;
@@ -92,7 +97,40 @@ export class FileUploadComponent implements OnInit {
         .catch((e) => {
             // Each file will individually print an error if it fails
             // This isn't really helpful as a summary since it fails fast on the first issue
-            this.logServ.debug('FileUploadComp:\t 1 or more files were not stored.');
+            this.logServ.debug('FileUploadComp:\t 1 or more folders were not stored.');
+        })
+        .finally(() => {
+            // Clear the file list so that onchange will fire
+            // again even if the same file is selected
+            this.folderUpload.nativeElement.value = null;
+        });
+    }
+
+    /**
+     * Unzip the production and store it.
+     */
+    async onZipAdded() {
+        const zips: File[] = this.zipUpload.nativeElement.files;
+        let promises = [];
+
+        for (let i = 0; i < zips.length; i++) {
+            this.logServ.debug(`FileUploadComp:\t Unzipping ${zips[i].name}...`);
+            promises.push(this.fss.unzipAndUpload(zips[i]));
+        }
+
+        Promise.all(promises)
+        .then(() => {
+            this.logServ.info('All zips loaded successfully.');
+        })
+        .catch((e) => {
+            // Each file will individually print an error if it fails
+            // This isn't really helpful as a summary since it fails fast on the first issue
+            this.logServ.debug('FileUploadComp:\t 1 or more zips were not stored.');
+        })
+        .finally(() => {
+            // Clear the file list so that onchange will fire
+            // again even if the same file is selected
+            this.zipUpload.nativeElement.value = null;
         });
     }
 }

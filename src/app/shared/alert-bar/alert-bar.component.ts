@@ -17,7 +17,6 @@ export class AlertBarComponent implements OnInit {
     ) { }
 
     ngOnInit() {
-        console.dir(this.alertBar);
         this.logServ.msgList$.subscribe((msg) => {
             console.log(this.generateId());
 

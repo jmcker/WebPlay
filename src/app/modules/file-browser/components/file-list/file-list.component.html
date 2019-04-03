@@ -11,6 +11,12 @@
 
     <!-- File list -->
     <table id="production_list" class="production-list">
+        <!-- Empty -->
+        <tr *ngIf="entries.length === 0">
+            <td>Folder is empty.</td>
+            <td class="icon"></td>
+        </tr>
+
         <tr *ngFor="let entry of entries">
             <ng-container *ngIf="entry.isDirectory; then isDirectory; else isFile"></ng-container>
 
