@@ -8,7 +8,7 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { FileSystemUsage } from '../_models/file-system-usage';
 import { LogService } from './log.service';
 import { FileSystemData } from '../_models/file-system-data';
-import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { DomSanitizer, SafeUrl, SafeResourceUrl } from '@angular/platform-browser';
 import { FileSystemEntry } from '../_models/file-system-entry';
 import { FileSystem } from '../_models/file-system';
 import { FileSystemDirectoryEntry } from '../_models/file-system-directory-entry';
@@ -133,6 +133,29 @@ export class FileSystemService {
     }
 
     /**
+     * Format bytes as a float accompanied by appropriate unit.
+     * 0 will be returned with no unit.
+     *
+     * @param bytes Number of bytes
+     * @param precision Number of decimal places. Defaults to 1
+     */
+    bytesToDisplay(bytes: number, precision: number = 1): string {
+        let size = bytes;
+        let units = ['B', 'KB', 'MB', 'GB', 'TB'];
+
+        let i = 0;
+        for (i = 0; size > 1024; i++) {
+            size /= 1024.0;
+        }
+
+        // Prevent the extra decimal and unit
+        if (size != 0)
+            return `${size.toFixed(precision)} ${units[i]}`;
+        else
+            return `0`;
+    }
+
+    /**
      * Convert bytes to mebibytes (MB).
      *
      * @param bytes Number of bytes
@@ -225,6 +248,18 @@ export class FileSystemService {
         path = this.filer.pathToFilesystemURL(path);
 
         return this.sanitizer.bypassSecurityTrustUrl(path);
+    }
+
+    /**
+     * Bypass restrictions that mark filesystem URLs as unsafe
+     * for ResourceURLs such as iFrames.
+     *
+     * @param path URL or path to sanitize
+     */
+    sanitizeFsResourceUrl(path: string): SafeResourceUrl {
+        path = this.filer.pathToFilesystemURL(path);
+
+        return this.sanitizer.bypassSecurityTrustResourceUrl(path);
     }
 
     /**

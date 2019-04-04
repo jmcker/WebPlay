@@ -35,10 +35,10 @@ export class FileBrowserComponent implements OnInit {
     private _mode: FileBrowserMode = FileBrowserMode.BROWSE;
 
     /**
-     * Boolean indicating/controlling whether or not the preview
-     * window is visible.
+     * FileSystemEntry that is currently being previewed.
+     * null when not previewing.
      */
-    public previewing: boolean = false;
+    public previewEntry: FileSystemEntry = null;
 
     constructor(
         private logServ: LogService,
@@ -81,14 +81,16 @@ export class FileBrowserComponent implements OnInit {
     preview(entry: FileSystemEntry) {
         this.logServ.debug('FileBrowserComp:\t Preview event received.');
 
-        this.previewing = true;
+        this.previewEntry = entry;
     }
 
     /**
      * Close the preview window and cleanup.
      */
     endPreview() {
-        this.previewing = false;
+        this.logServ.debug('FileBrowserComp:\t End preview event received.');
+
+        this.previewEntry = null;
     }
 
     /**

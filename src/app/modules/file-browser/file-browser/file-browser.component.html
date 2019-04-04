@@ -10,8 +10,9 @@
     (delete)="delete($event)"
 ></app-file-list>
 
-<app-file-preview *ngIf="previewing"
+<app-file-preview *ngIf="previewEntry != null"
     (close)="endPreview($event)"
+    [entry]="previewEntry"
 ></app-file-preview>
 
 <app-file-upload #fileUpload></app-file-upload>

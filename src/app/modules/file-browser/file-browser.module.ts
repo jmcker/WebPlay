@@ -7,16 +7,18 @@ import { FileListComponent } from './components/file-list/file-list.component';
 import { FileUploadComponent } from './components/file-upload/file-upload.component';
 import { FilepathDisplayComponent } from './components/filepath-display/filepath-display.component';
 import { UsageDisplayComponent } from './components/usage-display/usage-display.component';
+import { SharedModule } from '@app/shared/shared.module';
 
 @NgModule({
     declarations: [FileBrowserComponent, FilePreviewComponent, FileListComponent, FileUploadComponent, FilepathDisplayComponent, UsageDisplayComponent],
     imports: [
         CommonModule,
-        FileBrowserRoutingModule
+        FileBrowserRoutingModule,
+        SharedModule
     ],
     exports: [
         FileBrowserComponent,
-        FilePreviewComponent
+        FilePreviewComponent,
     ]
 })
 export class FileBrowserModule { }

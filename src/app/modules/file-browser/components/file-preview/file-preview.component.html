@@ -1,14 +1,42 @@
-<div id="file_preview_container" class="file-preview-container">
-    <div id="file_preview_inner" class="file-preview-inner">
+<div class="file-preview-container">
+    <div class="file-preview-inner">
         <div style="position:relative; width: 100%;">
-            <span class="modal-x" (click)="doClose()">X</span>
+            <span class="modal-x" (click)="close.emit(true)">X</span>
         </div>
-        <table id="file_preview_info" class="file-preview-info">
-            <tr></tr>
-            <tr></tr>
-            <tr></tr>
-            <tr></tr>
+
+        <div>{{ status }}</div>
+        <table class="file-preview-info">
+            <tr>
+                <td>
+                    <b>{{ entry?.name }}</b>
+                </td>
+                <td>
+                    [<a *ngIf="entry !== null" [href]="fss.sanitizeFsUrl(entry?.toURL())" title="Copy this link address into a new tab to access the raw file.">Raw</a>]
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Type: {{ fileType }}
+                </td>
+                <td>
+                    Size: {{ fss.bytesToDisplay(fileSize, 2) }}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Last modified: {{ fileLastMod }}
+                </td>
+            </tr>
+            <tr>
+            </tr>
         </table>
-        <div id="file_preview" class="file-preview"></div>
+
+        <app-html-media
+            [entry]="entry"
+            [parent]="mediaBox"
+            [autoplay]="true"
+        ></app-html-media>
+
+        <div #mediaBox class="file-preview"></div>
     </div>
 </div>

@@ -409,3 +409,30 @@ h2 {
     height: 5px;
 }
 
+
+/* Stuff that should actually stay here */
+.preview-audio {
+    width: 75%;
+    padding-top: 20px;
+}
+
+.preview-video {
+    height: 98%;
+}
+
+.preview-image {
+    height: 99%;
+    opacity: 0;
+    transition: opacity .5s ease-in-out;
+}
+
+.preview-iframe {
+    width: 98%;
+    height: 98%;
+    background-color: white;
+}
+
+.preview-text {
+    width: 98%;
+    height: 98%;
+}
